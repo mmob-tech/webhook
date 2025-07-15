@@ -1,4 +1,4 @@
-service: github-audit-webhook
+service: webhook
 
 provider:
   name: aws

@@ -5,7 +5,7 @@ This project is an AWS Lambda function that processes GitHub webhook events rela
 ## Project Structure
 
 ```
-github-audit-webhook
+webhook
 ├── src
 │   ├── handler.ts          # Entry point for the AWS Lambda function
 │   ├── types

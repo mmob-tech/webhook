@@ -1,0 +1,31 @@
+{
+  "name": "github-audit-webhook",
+  "version": "1.0.0",
+  "description": "AWS Lambda function to handle GitHub audit log webhook events.",
+  "main": "src/handler.ts",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "serverless deploy",
+    "test": "jest"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.1000.0",
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.5.0",
+    "serverless": "^2.0.0",
+    "jest": "^27.0.0",
+    "@types/jest": "^27.0.0",
+    "@types/aws-lambda": "^8.10.0"
+  },
+  "keywords": [
+    "AWS",
+    "Lambda",
+    "GitHub",
+    "Webhook",
+    "Audit Log"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}

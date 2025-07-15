@@ -1,0 +1,26 @@
+service: github-audit-webhook
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  region: eu-west-2
+
+functions:
+  webhookHandler:
+    handler: src/handler.webhookHandler
+    events:
+      - http:
+          path: webhook
+          method: post
+          cors: true
+
+plugins:
+  - serverless-offline
+
+package:
+  individually: true
+
+custom:
+  webpack:
+    webpackConfig: "./webpack.config.js"
+    includeModules: true

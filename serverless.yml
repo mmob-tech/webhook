@@ -21,6 +21,6 @@ package:
   individually: true
 
 custom:
-  webpack:
-    webpackConfig: "./webpack.config.js"
-    includeModules: true
+  serverless-offline:
+    httpPort: 4001
+    port: 4001

@@ -710,6 +710,187 @@ describe("webhookHandler", () => {
     });
   });
 
+  describe("Check Suite events", () => {
+    it("should handle check suite completed event", async () => {
+      const checkSuitePayload = {
+        action: "completed",
+        check_suite: {
+          id: 123456,
+          node_id: "CS_123456",
+          head_branch: "main",
+          head_sha: "abc123",
+          status: "completed" as const,
+          conclusion: "success" as const,
+          url: "https://api.github.com/repos/my-org/test-repo/check-suites/123456",
+          before: "def456",
+          after: "abc123",
+          pull_requests: [],
+          app: {
+            id: 15368,
+            slug: "github-actions",
+            node_id: "MDM6QXBwMTUzNjg=",
+            owner: {
+              login: "github",
+              id: 1,
+            },
+            name: "GitHub Actions",
+            description: "GitHub Actions",
+            external_url: "https://github.com/features/actions",
+            html_url: "https://github.com/apps/github-actions",
+            created_at: "2018-07-30T09:30:17Z",
+            updated_at: "2019-12-10T19:04:12Z",
+          },
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:05:00Z",
+          latest_check_runs_count: 1,
+          check_runs_url:
+            "https://api.github.com/repos/my-org/test-repo/check-suites/123456/check-runs",
+          head_commit: {
+            id: "abc123",
+            tree_id: "def456",
+            message: "Test commit",
+            timestamp: "2025-07-15T10:00:00Z",
+            author: {
+              name: "Test Author",
+              email: "test@example.com",
+            },
+            committer: {
+              name: "Test Author",
+              email: "test@example.com",
+            },
+          },
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "check_suite";
+      mockEvent.body = JSON.stringify(checkSuitePayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Check suite completed event processed",
+          head_sha: checkSuitePayload.check_suite.head_sha,
+          status: checkSuitePayload.check_suite.status,
+          conclusion: checkSuitePayload.check_suite.conclusion,
+          action: checkSuitePayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Check Run events", () => {
+    it("should handle check run completed event", async () => {
+      const checkRunPayload = {
+        action: "completed",
+        check_run: {
+          id: 123456,
+          node_id: "CR_123456",
+          head_sha: "abc123",
+          external_id: "42",
+          url: "https://api.github.com/repos/my-org/test-repo/check-runs/123456",
+          html_url: "https://github.com/my-org/test-repo/runs/123456",
+          details_url: "https://example.com",
+          status: "completed" as const,
+          conclusion: "success" as const,
+          started_at: "2025-07-15T10:00:00Z",
+          completed_at: "2025-07-15T10:05:00Z",
+          output: {
+            title: "Test Results",
+            summary: "All tests passed",
+            text: "Details about the test results",
+            annotations_count: 0,
+            annotations_url:
+              "https://api.github.com/repos/my-org/test-repo/check-runs/123456/annotations",
+          },
+          name: "test-check",
+          check_suite: {
+            id: 789,
+            node_id: "CS_789",
+            head_branch: "main",
+            head_sha: "abc123",
+            status: "completed" as const,
+            conclusion: "success" as const,
+            url: "https://api.github.com/repos/my-org/test-repo/check-suites/789",
+            before: "def456",
+            after: "abc123",
+            pull_requests: [],
+            app: {
+              id: 15368,
+              slug: "github-actions",
+              node_id: "MDM6QXBwMTUzNjg=",
+              owner: {
+                login: "github",
+                id: 1,
+              },
+              name: "GitHub Actions",
+              description: "GitHub Actions",
+              external_url: "https://github.com/features/actions",
+              html_url: "https://github.com/apps/github-actions",
+              created_at: "2018-07-30T09:30:17Z",
+              updated_at: "2019-12-10T19:04:12Z",
+            },
+            created_at: "2025-07-15T10:00:00Z",
+            updated_at: "2025-07-15T10:05:00Z",
+          },
+          app: {
+            id: 15368,
+            slug: "github-actions",
+            node_id: "MDM6QXBwMTUzNjg=",
+            owner: {
+              login: "github",
+              id: 1,
+            },
+            name: "GitHub Actions",
+            description: "GitHub Actions",
+            external_url: "https://github.com/features/actions",
+            html_url: "https://github.com/apps/github-actions",
+            created_at: "2018-07-30T09:30:17Z",
+            updated_at: "2019-12-10T19:04:12Z",
+          },
+          pull_requests: [],
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:05:00Z",
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "check_run";
+      mockEvent.body = JSON.stringify(checkRunPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Check run completed event processed",
+          check_run: checkRunPayload.check_run.name,
+          status: checkRunPayload.check_run.status,
+          conclusion: checkRunPayload.check_run.conclusion,
+          action: checkRunPayload.action,
+        }),
+      });
+    });
+  });
+
   describe("Release events", () => {
     it("should handle release published event", async () => {
       const releasePayload = {
@@ -779,6 +960,10 @@ describe("webhookHandler", () => {
           name: "test-repo",
           full_name: "my-org/test-repo",
           stargazers_count: 42,
+          owner: {
+            login: "my-org",
+            id: 789,
+          },
         },
         sender: {
           login: "octocat",
@@ -812,6 +997,10 @@ describe("webhookHandler", () => {
           name: "test-repo",
           full_name: "my-org/test-repo",
           watchers_count: 10,
+          owner: {
+            login: "my-org",
+            id: 789,
+          },
         },
         sender: {
           login: "octocat",
@@ -859,6 +1048,10 @@ describe("webhookHandler", () => {
           name: "test-repo",
           full_name: "my-org/test-repo",
           forks_count: 5,
+          owner: {
+            login: "my-org",
+            id: 789,
+          },
         },
         sender: {
           login: "forker",
@@ -917,6 +1110,271 @@ describe("webhookHandler", () => {
           member: memberPayload.member.login,
           repository: memberPayload.repository.full_name,
           action: memberPayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Deployment events", () => {
+    it("should handle deployment created event", async () => {
+      const deploymentPayload = {
+        action: "created",
+        deployment: {
+          url: "https://api.github.com/repos/my-org/test-repo/deployments/123456",
+          id: 123456,
+          node_id: "D_123456",
+          sha: "abc123",
+          ref: "main",
+          task: "deploy",
+          payload: {},
+          original_environment: "production",
+          environment: "production",
+          description: "Deploy to production",
+          creator: {
+            login: "octocat",
+            id: 1,
+          },
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:00:00Z",
+          statuses_url:
+            "https://api.github.com/repos/my-org/test-repo/deployments/123456/statuses",
+          repository_url: "https://api.github.com/repos/my-org/test-repo",
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "deployment";
+      mockEvent.body = JSON.stringify(deploymentPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Deployment created event processed",
+          deployment_id: deploymentPayload.deployment.id,
+          environment: deploymentPayload.deployment.environment,
+          action: deploymentPayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Deployment Status events", () => {
+    it("should handle deployment status created event", async () => {
+      const deploymentStatusPayload = {
+        action: "created",
+        deployment_status: {
+          url: "https://api.github.com/repos/my-org/test-repo/deployments/123456/statuses/789",
+          id: 789,
+          node_id: "DS_789",
+          state: "success" as const,
+          creator: {
+            login: "octocat",
+            id: 1,
+          },
+          description: "Deployment finished successfully",
+          environment: "production",
+          target_url: "https://my-app.com",
+          created_at: "2025-07-15T10:05:00Z",
+          updated_at: "2025-07-15T10:05:00Z",
+          deployment_url:
+            "https://api.github.com/repos/my-org/test-repo/deployments/123456",
+          repository_url: "https://api.github.com/repos/my-org/test-repo",
+        },
+        deployment: {
+          url: "https://api.github.com/repos/my-org/test-repo/deployments/123456",
+          id: 123456,
+          node_id: "D_123456",
+          sha: "abc123",
+          ref: "main",
+          task: "deploy",
+          payload: {},
+          environment: "production",
+          description: "Deploy to production",
+          creator: {
+            login: "octocat",
+            id: 1,
+          },
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:00:00Z",
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "deployment_status";
+      mockEvent.body = JSON.stringify(deploymentStatusPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Deployment status created event processed",
+          deployment_id: deploymentStatusPayload.deployment.id,
+          state: deploymentStatusPayload.deployment_status.state,
+          environment: deploymentStatusPayload.deployment_status.environment,
+          action: deploymentStatusPayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Pull Request Review events", () => {
+    it("should handle pull request review submitted event", async () => {
+      const prReviewPayload = {
+        action: "submitted",
+        review: {
+          id: 123456,
+          node_id: "PRR_123456",
+          user: {
+            login: "reviewer",
+            id: 2,
+          },
+          body: "Looks good to me!",
+          commit_id: "abc123",
+          submitted_at: "2025-07-15T10:00:00Z",
+          state: "approved" as const,
+          html_url:
+            "https://github.com/my-org/test-repo/pull/1#pullrequestreview-123456",
+          pull_request_url:
+            "https://api.github.com/repos/my-org/test-repo/pulls/1",
+          author_association: "COLLABORATOR",
+        },
+        pull_request: {
+          id: 789,
+          number: 1,
+          title: "Test PR",
+          user: {
+            login: "octocat",
+            id: 1,
+          },
+          state: "open" as const,
+          merged: false,
+          head: {
+            ref: "feature-branch",
+            sha: "abc123",
+          },
+          base: {
+            ref: "main",
+            sha: "def456",
+          },
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "reviewer",
+          id: 2,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "pull_request_review";
+      mockEvent.body = JSON.stringify(prReviewPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "PR Review submitted event processed",
+          pr_number: prReviewPayload.pull_request.number,
+          review_state: prReviewPayload.review.state,
+          action: prReviewPayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Pull Request Review Comment events", () => {
+    it("should handle pull request review comment created event", async () => {
+      const prReviewCommentPayload = {
+        action: "created",
+        comment: {
+          id: 123456,
+          node_id: "PRRC_123456",
+          url: "https://api.github.com/repos/my-org/test-repo/pulls/comments/123456",
+          html_url:
+            "https://github.com/my-org/test-repo/pull/1#discussion_r123456",
+          body: "This line needs to be fixed",
+          user: {
+            login: "reviewer",
+            id: 2,
+          },
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:00:00Z",
+          author_association: "COLLABORATOR",
+          commit_id: "abc123",
+          original_commit_id: "abc123",
+          diff_hunk:
+            "@@ -1,4 +1,4 @@\n line1\n-line2\n+line2 updated\n line3\n line4",
+          path: "src/test.js",
+          position: 2,
+          original_position: 2,
+          pull_request_review_id: 789,
+          pull_request_url:
+            "https://api.github.com/repos/my-org/test-repo/pulls/1",
+        },
+        pull_request: {
+          id: 789,
+          number: 1,
+          title: "Test PR",
+          user: {
+            login: "octocat",
+            id: 1,
+          },
+          state: "open" as const,
+          merged: false,
+          head: {
+            ref: "feature-branch",
+            sha: "abc123",
+          },
+          base: {
+            ref: "main",
+            sha: "def456",
+          },
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "reviewer",
+          id: 2,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "pull_request_review_comment";
+      mockEvent.body = JSON.stringify(prReviewCommentPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "PR Review Comment created event processed",
+          pr_number: prReviewCommentPayload.pull_request.number,
+          comment_id: prReviewCommentPayload.comment.id,
+          action: prReviewCommentPayload.action,
         }),
       });
     });
@@ -982,6 +1440,57 @@ describe("webhookHandler", () => {
     });
   });
 
+  describe("Commit Comment events", () => {
+    it("should handle commit comment created event", async () => {
+      const commitCommentPayload = {
+        action: "created",
+        comment: {
+          id: 123456,
+          node_id: "CC_123456",
+          url: "https://api.github.com/repos/my-org/test-repo/comments/123456",
+          html_url:
+            "https://github.com/my-org/test-repo/commit/abc123#commitcomment-123456",
+          body: "This commit looks good",
+          user: {
+            login: "commenter",
+            id: 2,
+          },
+          position: 1,
+          line: 5,
+          path: "src/test.js",
+          commit_id: "abc123",
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:00:00Z",
+          author_association: "CONTRIBUTOR",
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "commenter",
+          id: 2,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "commit_comment";
+      mockEvent.body = JSON.stringify(commitCommentPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Commit comment created event processed",
+          commit_id: commitCommentPayload.comment.commit_id,
+          comment_id: commitCommentPayload.comment.id,
+          action: commitCommentPayload.action,
+        }),
+      });
+    });
+  });
+
   describe("Create events", () => {
     it("should handle create branch event", async () => {
       const createPayload = {
@@ -1010,6 +1519,40 @@ describe("webhookHandler", () => {
         statusCode: 200,
         body: JSON.stringify({
           message: "Create branch event processed",
+          ref: createPayload.ref,
+          ref_type: createPayload.ref_type,
+          repository: createPayload.repository.full_name,
+        }),
+      });
+    });
+
+    it("should handle create tag event", async () => {
+      const createPayload = {
+        ref: "v1.0.0",
+        ref_type: "tag" as const,
+        master_branch: "main",
+        description: "Test repository",
+        pusher_type: "user",
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "create";
+      mockEvent.body = JSON.stringify(createPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Create tag event processed",
           ref: createPayload.ref,
           ref_type: createPayload.ref_type,
           repository: createPayload.repository.full_name,
@@ -1050,11 +1593,417 @@ describe("webhookHandler", () => {
         }),
       });
     });
+
+    it("should handle delete tag event", async () => {
+      const deletePayload = {
+        ref: "v1.0.0",
+        ref_type: "tag" as const,
+        pusher_type: "user",
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "delete";
+      mockEvent.body = JSON.stringify(deletePayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Delete tag event processed",
+          ref: deletePayload.ref,
+          ref_type: deletePayload.ref_type,
+          repository: deletePayload.repository.full_name,
+        }),
+      });
+    });
   });
 
-  describe("Audit log events", () => {
-    it("should process valid audit log events successfully", async () => {
-      const validPayload = {
+  describe("Status events", () => {
+    it("should handle status event", async () => {
+      const statusPayload = {
+        id: 123456,
+        sha: "abc123",
+        name: "continuous-integration/travis-ci",
+        target_url: "https://travis-ci.org/my-org/test-repo/builds/123456",
+        context: "continuous-integration/travis-ci",
+        description: "Build passed",
+        state: "success" as const,
+        commit: {
+          sha: "abc123",
+          commit: {
+            author: {
+              name: "Test Author",
+              email: "test@example.com",
+              date: "2025-07-15T10:00:00Z",
+            },
+            committer: {
+              name: "Test Author",
+              email: "test@example.com",
+              date: "2025-07-15T10:00:00Z",
+            },
+            message: "Test commit",
+          },
+          url: "https://api.github.com/repos/my-org/test-repo/commits/abc123",
+          html_url: "https://github.com/my-org/test-repo/commit/abc123",
+          comments_url:
+            "https://api.github.com/repos/my-org/test-repo/commits/abc123/comments",
+          author: {
+            login: "octocat",
+            id: 1,
+          },
+          committer: {
+            login: "octocat",
+            id: 1,
+          },
+        },
+        branches: [
+          {
+            name: "main",
+            commit: {
+              sha: "abc123",
+              url: "https://api.github.com/repos/my-org/test-repo/commits/abc123",
+            },
+            protected: true,
+          },
+        ],
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "status";
+      mockEvent.body = JSON.stringify(statusPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Status event processed",
+          state: statusPayload.state,
+          context: statusPayload.context,
+          sha: statusPayload.sha,
+        }),
+      });
+    });
+  });
+
+  describe("Discussion events", () => {
+    it("should handle discussion created event", async () => {
+      const discussionPayload = {
+        action: "created",
+        discussion: {
+          id: 123456,
+          node_id: "D_123456",
+          url: "https://api.github.com/repos/my-org/test-repo/discussions/123456",
+          html_url: "https://github.com/my-org/test-repo/discussions/1",
+          category: {
+            id: 789,
+            node_id: "DC_789",
+            name: "General",
+            emoji: "💬",
+            description: "General discussion",
+            created_at: "2025-01-01T00:00:00Z",
+            updated_at: "2025-01-01T00:00:00Z",
+            slug: "general",
+            is_answerable: false,
+          },
+          number: 1,
+          title: "Test Discussion",
+          user: {
+            login: "octocat",
+            id: 1,
+          },
+          state: "open" as const,
+          locked: false,
+          comments: 0,
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:00:00Z",
+          author_association: "OWNER",
+          body: "This is a test discussion",
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "discussion";
+      mockEvent.body = JSON.stringify(discussionPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Discussion created event processed",
+          discussion_number: discussionPayload.discussion.number,
+          title: discussionPayload.discussion.title,
+          action: discussionPayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Discussion Comment events", () => {
+    it("should handle discussion comment created event", async () => {
+      const discussionCommentPayload = {
+        action: "created",
+        comment: {
+          id: 123456,
+          node_id: "DC_123456",
+          url: "https://api.github.com/repos/my-org/test-repo/discussions/comments/123456",
+          html_url:
+            "https://github.com/my-org/test-repo/discussions/1#discussioncomment-123456",
+          body: "This is a great discussion!",
+          user: {
+            login: "commenter",
+            id: 2,
+          },
+          created_at: "2025-07-15T10:05:00Z",
+          updated_at: "2025-07-15T10:05:00Z",
+          author_association: "CONTRIBUTOR",
+          child_comment_count: 0,
+        },
+        discussion: {
+          id: 789,
+          node_id: "D_789",
+          url: "https://api.github.com/repos/my-org/test-repo/discussions/789",
+          html_url: "https://github.com/my-org/test-repo/discussions/1",
+          category: {
+            id: 456,
+            node_id: "DC_456",
+            name: "General",
+            emoji: "💬",
+            description: "General discussion",
+            created_at: "2025-01-01T00:00:00Z",
+            updated_at: "2025-01-01T00:00:00Z",
+            slug: "general",
+            is_answerable: false,
+          },
+          number: 1,
+          title: "Test Discussion",
+          user: {
+            login: "octocat",
+            id: 1,
+          },
+          state: "open" as const,
+          locked: false,
+          comments: 1,
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:05:00Z",
+          author_association: "OWNER",
+          body: "This is a test discussion",
+        },
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "commenter",
+          id: 2,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "discussion_comment";
+      mockEvent.body = JSON.stringify(discussionCommentPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Discussion comment created event processed",
+          discussion_number: discussionCommentPayload.discussion.number,
+          comment_id: discussionCommentPayload.comment.id,
+          action: discussionCommentPayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Package events", () => {
+    it("should handle package published event", async () => {
+      const packagePayload = {
+        action: "published",
+        package: {
+          id: 123456,
+          name: "test-package",
+          namespace: "my-org",
+          description: "Test package",
+          ecosystem: "npm",
+          package_type: "npm",
+          html_url: "https://github.com/my-org/test-package",
+          created_at: "2025-07-15T10:00:00Z",
+          updated_at: "2025-07-15T10:05:00Z",
+          owner: {
+            login: "my-org",
+            id: 789,
+          },
+          package_version: {
+            id: 789,
+            version: "1.0.0",
+            summary: "Test package version",
+            name: "test-package",
+            description: "Test package description",
+            body: "Test package body",
+            body_html: "<p>Test package body</p>",
+            release: {
+              url: "https://api.github.com/repos/my-org/test-package/releases/123",
+              html_url:
+                "https://github.com/my-org/test-package/releases/tag/v1.0.0",
+              id: 123,
+              tag_name: "v1.0.0",
+              target_commitish: "main",
+              name: "v1.0.0",
+              draft: false,
+              prerelease: false,
+              created_at: "2025-07-15T10:00:00Z",
+              published_at: "2025-07-15T10:05:00Z",
+            },
+            manifest: "{}",
+            html_url:
+              "https://github.com/my-org/test-package/releases/tag/v1.0.0",
+            tag_name: "v1.0.0",
+            target_commitish: "main",
+            target_oid: "abc123",
+            draft: false,
+            prerelease: false,
+            created_at: "2025-07-15T10:00:00Z",
+            updated_at: "2025-07-15T10:05:00Z",
+            metadata: [
+              {
+                package_type: "npm",
+              },
+            ],
+            package_files: [
+              {
+                download_url:
+                  "https://npm.pkg.github.com/download/test-package/1.0.0",
+                id: 456,
+                name: "test-package-1.0.0.tgz",
+                sha256: "abc123",
+                sha1: "def456",
+                md5: "ghi789",
+                content_type: "application/gzip",
+                state: "uploaded",
+                size: 1024,
+                created_at: "2025-07-15T10:00:00Z",
+                updated_at: "2025-07-15T10:05:00Z",
+              },
+            ],
+            author: {
+              login: "octocat",
+              id: 1,
+            },
+            installation_command: "npm install @my-org/test-package@1.0.0",
+          },
+          registry: {
+            about_url: "https://github.com/features/packages",
+            name: "GitHub npm registry",
+            type: "npm",
+            url: "https://npm.pkg.github.com",
+            vendor: "GitHub Inc",
+          },
+        },
+        repository: {
+          id: 123456,
+          name: "test-package",
+          full_name: "my-org/test-package",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "package";
+      mockEvent.body = JSON.stringify(packagePayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Package published event processed",
+          package_name: packagePayload.package.name,
+          package_type: packagePayload.package.package_type,
+          action: packagePayload.action,
+        }),
+      });
+    });
+  });
+
+  describe("Gollum events", () => {
+    it("should handle gollum event", async () => {
+      const gollumPayload = {
+        pages: [
+          {
+            page_name: "Home",
+            title: "Home",
+            summary: "Updated home page",
+            action: "edited" as const,
+            sha: "abc123",
+            html_url: "https://github.com/my-org/test-repo/wiki/Home",
+          },
+          {
+            page_name: "Installation",
+            title: "Installation",
+            action: "created" as const,
+            sha: "def456",
+            html_url: "https://github.com/my-org/test-repo/wiki/Installation",
+          },
+        ],
+        repository: {
+          id: 123456,
+          name: "test-repo",
+          full_name: "my-org/test-repo",
+        },
+        sender: {
+          login: "octocat",
+          id: 1,
+        },
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "gollum";
+      mockEvent.body = JSON.stringify(gollumPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Gollum event processed",
+          pages_count: gollumPayload.pages.length,
+          repository: gollumPayload.repository.full_name,
+        }),
+      });
+    });
+  });
+
+  describe("Audit Log events", () => {
+    it("should handle audit log streaming event", async () => {
+      const auditLogPayload = {
         action: "audit_log_streaming",
         audit_log_events: [
           {
@@ -1064,9 +2013,35 @@ describe("webhookHandler", () => {
               id: 1,
             },
             created_at: "2025-07-15T10:00:00Z",
-            resource: "my-new-repo",
+            resource: "test-repo",
             resource_id: 123456,
             resource_type: "repository",
+            organization: {
+              login: "my-org",
+              id: 789,
+            },
+            repository: {
+              name: "test-repo",
+              id: 123456,
+              full_name: "my-org/test-repo",
+            },
+            data: {
+              visibility: "private",
+            },
+          },
+          {
+            action: "user.login",
+            actor: {
+              login: "octocat",
+              id: 1,
+            },
+            created_at: "2025-07-15T10:01:00Z",
+            resource: "octocat",
+            resource_id: 1,
+            resource_type: "user",
+            data: {
+              login_method: "web",
+            },
           },
         ],
         organization: {
@@ -1074,79 +2049,55 @@ describe("webhookHandler", () => {
           id: 789,
         },
         sender: {
-          login: "octocat",
-          id: 1,
+          login: "github[bot]",
+          id: 27856297,
+        },
+        installation: {
+          id: 12345,
         },
       };
 
-      mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
-      mockEvent.body = JSON.stringify(validPayload);
+      // Mock the validator to return true
       (validateWebhookPayload as jest.Mock).mockReturnValue(true);
+
+      mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
+      mockEvent.body = JSON.stringify(auditLogPayload);
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
-      expect(validateWebhookPayload).toHaveBeenCalledWith(validPayload);
+      expect(validateWebhookPayload).toHaveBeenCalledWith(auditLogPayload);
       expect(mockCallback).toHaveBeenCalledWith(null, {
         statusCode: 200,
         body: JSON.stringify({
           message: "Audit log events processed successfully",
-          processed_events: 1,
+          processed_events: auditLogPayload.audit_log_events.length,
         }),
       });
     });
 
-    it("should process multiple audit log events", async () => {
-      const multipleEventsPayload = {
-        action: "audit_log_streaming",
-        audit_log_events: [
-          {
-            action: "repo.create",
-            actor: { login: "octocat", id: 1 },
-            created_at: "2025-07-15T10:00:00Z",
-            resource: "repo1",
-            resource_id: 123456,
-            resource_type: "repository",
-          },
-          {
-            action: "repo.destroy",
-            actor: { login: "octocat", id: 1 },
-            created_at: "2025-07-15T10:01:00Z",
-            resource: "repo2",
-            resource_id: 123457,
-            resource_type: "repository",
-          },
-        ],
-        organization: { login: "my-org", id: 789 },
-        sender: { login: "octocat", id: 1 },
-      };
-
-      mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
-      mockEvent.body = JSON.stringify(multipleEventsPayload);
-      (validateWebhookPayload as jest.Mock).mockReturnValue(true);
-
-      await webhookHandler(mockEvent, mockContext, mockCallback);
-
-      expect(mockCallback).toHaveBeenCalledWith(null, {
-        statusCode: 200,
-        body: JSON.stringify({
-          message: "Audit log events processed successfully",
-          processed_events: 2,
-        }),
-      });
-    });
-
-    it("should return 400 for invalid audit log payload", async () => {
+    it("should handle invalid audit log payload", async () => {
       const invalidPayload = {
         action: "audit_log_streaming",
-        invalid_field: "test",
+        audit_log_events: [],
+        organization: {
+          login: "my-org",
+          id: 789,
+        },
+        sender: {
+          login: "github[bot]",
+          id: 27856297,
+        },
       };
+
+      // Mock the validator to return false
+      (validateWebhookPayload as jest.Mock).mockReturnValue(false);
 
       mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
       mockEvent.body = JSON.stringify(invalidPayload);
-      (validateWebhookPayload as jest.Mock).mockReturnValue(false);
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
+      expect(validateWebhookPayload).toHaveBeenCalledWith(invalidPayload);
       expect(mockCallback).toHaveBeenCalledWith(null, {
         statusCode: 400,
         body: JSON.stringify({ message: "Invalid audit log payload" }),
@@ -1155,9 +2106,14 @@ describe("webhookHandler", () => {
   });
 
   describe("Unsupported events", () => {
-    it("should return 400 for unsupported GitHub event", async () => {
+    it("should handle unsupported event type", async () => {
+      const unsupportedPayload = {
+        action: "test",
+        data: "test data",
+      };
+
       mockEvent.headers["X-GitHub-Event"] = "unsupported_event";
-      mockEvent.body = JSON.stringify({ action: "test" });
+      mockEvent.body = JSON.stringify(unsupportedPayload);
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1185,9 +2141,16 @@ describe("webhookHandler", () => {
             "deployment",
             "deployment_status",
             "pull_request_review",
+            "pull_request_review_comment",
             "issue_comment",
+            "commit_comment",
             "create",
             "delete",
+            "status",
+            "discussion",
+            "discussion_comment",
+            "package",
+            "gollum",
             "audit_log_streaming",
           ],
         }),
@@ -1196,7 +2159,8 @@ describe("webhookHandler", () => {
   });
 
   describe("Error handling", () => {
-    it("should handle malformed JSON", async () => {
+    it("should handle JSON parsing errors", async () => {
+      mockEvent.headers["X-GitHub-Event"] = "ping";
       mockEvent.body = "invalid json";
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
@@ -1207,37 +2171,14 @@ describe("webhookHandler", () => {
       });
     });
 
-    it("should handle null body", async () => {
-      mockEvent.body = null;
-      mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
-      (validateWebhookPayload as jest.Mock).mockReturnValue(false);
+    it("should handle missing GitHub event header", async () => {
+      const pingPayload = {
+        zen: "Non-blocking is better than blocking.",
+        hook_id: 123456,
+      };
 
-      await webhookHandler(mockEvent, mockContext, mockCallback);
-
-      expect(mockCallback).toHaveBeenCalledWith(null, {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Invalid audit log payload" }),
-      });
-    });
-
-    it("should handle validator throwing an error", async () => {
-      mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
-      mockEvent.body = JSON.stringify({ action: "audit_log_streaming" });
-      (validateWebhookPayload as jest.Mock).mockImplementation(() => {
-        throw new Error("Validation error");
-      });
-
-      await webhookHandler(mockEvent, mockContext, mockCallback);
-
-      expect(mockCallback).toHaveBeenCalledWith(null, {
-        statusCode: 500,
-        body: JSON.stringify({ message: "Internal server error" }),
-      });
-    });
-
-    it("should handle missing X-GitHub-Event header", async () => {
-      mockEvent.body = JSON.stringify({ action: "test" });
-      // No X-GitHub-Event header set
+      mockEvent.body = JSON.stringify(pingPayload);
+      // Don't set X-GitHub-Event header
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1265,9 +2206,16 @@ describe("webhookHandler", () => {
             "deployment",
             "deployment_status",
             "pull_request_review",
+            "pull_request_review_comment",
             "issue_comment",
+            "commit_comment",
             "create",
             "delete",
+            "status",
+            "discussion",
+            "discussion_comment",
+            "package",
+            "gollum",
             "audit_log_streaming",
           ],
         }),

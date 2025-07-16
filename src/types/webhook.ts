@@ -1132,6 +1132,410 @@ export interface GitHubDeletePayload {
   };
 }
 
+// Pull Request Review Comment events
+export interface GitHubPullRequestReviewCommentPayload {
+  action: "created" | "edited" | "deleted";
+  comment: {
+    id: number;
+    node_id: string;
+    url: string;
+    html_url: string;
+    body: string;
+    user: {
+      login: string;
+      id: number;
+    };
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+    commit_id: string;
+    original_commit_id: string;
+    diff_hunk: string;
+    path: string;
+    position: number;
+    original_position: number;
+    in_reply_to_id?: number;
+    pull_request_review_id: number;
+    pull_request_url: string;
+  };
+  pull_request: {
+    id: number;
+    number: number;
+    title: string;
+    user: {
+      login: string;
+      id: number;
+    };
+    state: "open" | "closed";
+    merged: boolean;
+    head: {
+      ref: string;
+      sha: string;
+    };
+    base: {
+      ref: string;
+      sha: string;
+    };
+  };
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
+// Status events (Commit status)
+export interface GitHubStatusPayload {
+  id: number;
+  sha: string;
+  name: string;
+  target_url: string;
+  context: string;
+  description: string;
+  state: "error" | "failure" | "pending" | "success";
+  commit: {
+    sha: string;
+    commit: {
+      author: {
+        name: string;
+        email: string;
+        date: string;
+      };
+      committer: {
+        name: string;
+        email: string;
+        date: string;
+      };
+      message: string;
+    };
+    url: string;
+    html_url: string;
+    comments_url: string;
+    author: {
+      login: string;
+      id: number;
+    };
+    committer: {
+      login: string;
+      id: number;
+    };
+  };
+  branches: Array<{
+    name: string;
+    commit: {
+      sha: string;
+      url: string;
+    };
+    protected: boolean;
+  }>;
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
+// Discussion events (Repository discussions)
+export interface GitHubDiscussionPayload {
+  action:
+    | "created"
+    | "edited"
+    | "deleted"
+    | "pinned"
+    | "unpinned"
+    | "locked"
+    | "unlocked"
+    | "transferred"
+    | "category_changed"
+    | "answered"
+    | "unanswered";
+  discussion: {
+    id: number;
+    node_id: string;
+    url: string;
+    html_url: string;
+    category: {
+      id: number;
+      node_id: string;
+      name: string;
+      emoji: string;
+      description: string;
+      created_at: string;
+      updated_at: string;
+      slug: string;
+      is_answerable: boolean;
+    };
+    answer_html_url?: string;
+    answer_chosen_at?: string;
+    answer_chosen_by?: {
+      login: string;
+      id: number;
+    };
+    number: number;
+    title: string;
+    user: {
+      login: string;
+      id: number;
+    };
+    state: "open" | "locked" | "converting" | "transferring";
+    locked: boolean;
+    comments: number;
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+    active_lock_reason?: string;
+    body: string;
+  };
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
+// Discussion Comment events
+export interface GitHubDiscussionCommentPayload {
+  action: "created" | "edited" | "deleted";
+  comment: {
+    id: number;
+    node_id: string;
+    url: string;
+    html_url: string;
+    body: string;
+    user: {
+      login: string;
+      id: number;
+    };
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+    parent_id?: number;
+    child_comment_count: number;
+  };
+  discussion: {
+    id: number;
+    node_id: string;
+    url: string;
+    html_url: string;
+    category: {
+      id: number;
+      node_id: string;
+      name: string;
+      emoji: string;
+      description: string;
+      created_at: string;
+      updated_at: string;
+      slug: string;
+      is_answerable: boolean;
+    };
+    number: number;
+    title: string;
+    user: {
+      login: string;
+      id: number;
+    };
+    state: "open" | "locked";
+    locked: boolean;
+    comments: number;
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+    body: string;
+  };
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
+// Package events (GitHub Packages)
+export interface GitHubPackagePayload {
+  action: "published" | "updated";
+  package: {
+    id: number;
+    name: string;
+    namespace: string;
+    description: string;
+    ecosystem: string;
+    package_type: string;
+    html_url: string;
+    created_at: string;
+    updated_at: string;
+    owner: {
+      login: string;
+      id: number;
+    };
+    package_version: {
+      id: number;
+      version: string;
+      summary: string;
+      name: string;
+      description: string;
+      body: string;
+      body_html: string;
+      release: {
+        url: string;
+        html_url: string;
+        id: number;
+        tag_name: string;
+        target_commitish: string;
+        name: string;
+        draft: boolean;
+        prerelease: boolean;
+        created_at: string;
+        published_at: string;
+      };
+      manifest: string;
+      html_url: string;
+      tag_name: string;
+      target_commitish: string;
+      target_oid: string;
+      draft: boolean;
+      prerelease: boolean;
+      created_at: string;
+      updated_at: string;
+      metadata: Array<{
+        package_type: string;
+        container?: {
+          tags: string[];
+        };
+      }>;
+      package_files: Array<{
+        download_url: string;
+        id: number;
+        name: string;
+        sha256: string;
+        sha1: string;
+        md5: string;
+        content_type: string;
+        state: string;
+        size: number;
+        created_at: string;
+        updated_at: string;
+      }>;
+      author: {
+        login: string;
+        id: number;
+      };
+      installation_command: string;
+    };
+    registry: {
+      about_url: string;
+      name: string;
+      type: string;
+      url: string;
+      vendor: string;
+    };
+  };
+  repository?: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
+// Commit Comment events
+export interface GitHubCommitCommentPayload {
+  action: "created";
+  comment: {
+    id: number;
+    node_id: string;
+    url: string;
+    html_url: string;
+    body: string;
+    user: {
+      login: string;
+      id: number;
+    };
+    position?: number;
+    line?: number;
+    path?: string;
+    commit_id: string;
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+  };
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
+// Gollum events (Wiki page)
+export interface GitHubGollumPayload {
+  pages: Array<{
+    page_name: string;
+    title: string;
+    summary?: string;
+    action: "created" | "edited";
+    sha: string;
+    html_url: string;
+  }>;
+  repository: {
+    id: number;
+    name: string;
+    full_name: string;
+  };
+  organization?: {
+    login: string;
+    id: number;
+  };
+  sender: {
+    login: string;
+    id: number;
+  };
+}
+
 // Union type for all webhook payloads
 export type WebhookPayload =
   | GitHubAuditLogWebhookPayload
@@ -1156,4 +1560,11 @@ export type WebhookPayload =
   | GitHubPullRequestReviewPayload
   | GitHubIssueCommentPayload
   | GitHubCreatePayload
-  | GitHubDeletePayload;
+  | GitHubDeletePayload
+  | GitHubPullRequestReviewCommentPayload
+  | GitHubStatusPayload
+  | GitHubDiscussionPayload
+  | GitHubDiscussionCommentPayload
+  | GitHubPackagePayload
+  | GitHubCommitCommentPayload
+  | GitHubGollumPayload;

@@ -4,22 +4,29 @@ import {
   GitHubAuditLogWebhookPayload,
   GitHubCheckRunPayload,
   GitHubCheckSuitePayload,
+  GitHubCommitCommentPayload,
   GitHubCreatePayload,
   GitHubDeletePayload,
   GitHubDeploymentPayload,
   GitHubDeploymentStatusPayload,
+  GitHubDiscussionCommentPayload,
+  GitHubDiscussionPayload,
   GitHubForkPayload,
+  GitHubGollumPayload,
   GitHubIssueCommentPayload,
   GitHubIssuesPayload,
   GitHubMemberPayload,
   GitHubOrganizationPayload,
+  GitHubPackagePayload,
   GitHubPingPayload,
   GitHubPullRequestPayload,
+  GitHubPullRequestReviewCommentPayload,
   GitHubPullRequestReviewPayload,
   GitHubPushPayload,
   GitHubReleasePayload,
   GitHubRepositoryPayload,
   GitHubStarPayload,
+  GitHubStatusPayload,
   GitHubTeamPayload,
   GitHubWatchPayload,
   GitHubWorkflowJobPayload,
@@ -418,6 +425,27 @@ export const webhookHandler = async (
       });
     }
 
+    // Handle pull request review comment events
+    if (githubEvent === "pull_request_review_comment") {
+      const prReviewCommentPayload =
+        payload as GitHubPullRequestReviewCommentPayload;
+      console.log(
+        `PR Review Comment ${prReviewCommentPayload.action}: #${prReviewCommentPayload.pull_request.number}`
+      );
+
+      await processPullRequestReviewCommentEvent(prReviewCommentPayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `PR Review Comment ${prReviewCommentPayload.action} event processed`,
+          pr_number: prReviewCommentPayload.pull_request.number,
+          comment_id: prReviewCommentPayload.comment.id,
+          action: prReviewCommentPayload.action,
+        }),
+      });
+    }
+
     // Handle issue comment events
     if (githubEvent === "issue_comment") {
       const issueCommentPayload = payload as GitHubIssueCommentPayload;
@@ -434,6 +462,26 @@ export const webhookHandler = async (
           issue_number: issueCommentPayload.issue.number,
           comment_id: issueCommentPayload.comment.id,
           action: issueCommentPayload.action,
+        }),
+      });
+    }
+
+    // Handle commit comment events
+    if (githubEvent === "commit_comment") {
+      const commitCommentPayload = payload as GitHubCommitCommentPayload;
+      console.log(
+        `Commit comment ${commitCommentPayload.action}: ${commitCommentPayload.comment.commit_id}`
+      );
+
+      await processCommitCommentEvent(commitCommentPayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `Commit comment ${commitCommentPayload.action} event processed`,
+          commit_id: commitCommentPayload.comment.commit_id,
+          comment_id: commitCommentPayload.comment.id,
+          action: commitCommentPayload.action,
         }),
       });
     }
@@ -470,6 +518,104 @@ export const webhookHandler = async (
           ref: deletePayload.ref,
           ref_type: deletePayload.ref_type,
           repository: deletePayload.repository.full_name,
+        }),
+      });
+    }
+
+    // Handle status events
+    if (githubEvent === "status") {
+      const statusPayload = payload as GitHubStatusPayload;
+      console.log(
+        `Status ${statusPayload.state}: ${statusPayload.context} on ${statusPayload.sha}`
+      );
+
+      await processStatusEvent(statusPayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `Status event processed`,
+          state: statusPayload.state,
+          context: statusPayload.context,
+          sha: statusPayload.sha,
+        }),
+      });
+    }
+
+    // Handle discussion events
+    if (githubEvent === "discussion") {
+      const discussionPayload = payload as GitHubDiscussionPayload;
+      console.log(
+        `Discussion ${discussionPayload.action}: #${discussionPayload.discussion.number}`
+      );
+
+      await processDiscussionEvent(discussionPayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `Discussion ${discussionPayload.action} event processed`,
+          discussion_number: discussionPayload.discussion.number,
+          title: discussionPayload.discussion.title,
+          action: discussionPayload.action,
+        }),
+      });
+    }
+
+    // Handle discussion comment events
+    if (githubEvent === "discussion_comment") {
+      const discussionCommentPayload =
+        payload as GitHubDiscussionCommentPayload;
+      console.log(
+        `Discussion comment ${discussionCommentPayload.action}: #${discussionCommentPayload.discussion.number}`
+      );
+
+      await processDiscussionCommentEvent(discussionCommentPayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `Discussion comment ${discussionCommentPayload.action} event processed`,
+          discussion_number: discussionCommentPayload.discussion.number,
+          comment_id: discussionCommentPayload.comment.id,
+          action: discussionCommentPayload.action,
+        }),
+      });
+    }
+
+    // Handle package events
+    if (githubEvent === "package") {
+      const packagePayload = payload as GitHubPackagePayload;
+      console.log(
+        `Package ${packagePayload.action}: ${packagePayload.package.name}`
+      );
+
+      await processPackageEvent(packagePayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: `Package ${packagePayload.action} event processed`,
+          package_name: packagePayload.package.name,
+          package_type: packagePayload.package.package_type,
+          action: packagePayload.action,
+        }),
+      });
+    }
+
+    // Handle gollum events (wiki)
+    if (githubEvent === "gollum") {
+      const gollumPayload = payload as GitHubGollumPayload;
+      console.log(`Gollum event: ${gollumPayload.pages.length} pages updated`);
+
+      await processGollumEvent(gollumPayload);
+
+      return callback(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Gollum event processed",
+          pages_count: gollumPayload.pages.length,
+          repository: gollumPayload.repository.full_name,
         }),
       });
     }
@@ -526,9 +672,16 @@ export const webhookHandler = async (
           "deployment",
           "deployment_status",
           "pull_request_review",
+          "pull_request_review_comment",
           "issue_comment",
+          "commit_comment",
           "create",
           "delete",
+          "status",
+          "discussion",
+          "discussion_comment",
+          "package",
+          "gollum",
           "audit_log_streaming",
         ],
       }),
@@ -652,12 +805,19 @@ const processOrganizationEvent = async (
       console.log(
         `Member added to organization: ${payload.organization.login}`
       );
+      if (payload.membership?.user) {
+        console.log(`User: ${payload.membership.user.login}`);
+        console.log(`Role: ${payload.membership.role}`);
+      }
       // Add your member added logic here
       break;
     case "member_removed":
       console.log(
         `Member removed from organization: ${payload.organization.login}`
       );
+      if (payload.membership?.user) {
+        console.log(`User: ${payload.membership.user.login}`);
+      }
       // Add your member removed logic here
       break;
     default:
@@ -679,6 +839,9 @@ const processTeamEvent = async (payload: GitHubTeamPayload): Promise<void> => {
       break;
     case "added_to_repository":
       console.log(`Team added to repository: ${payload.team.name}`);
+      if (payload.repository) {
+        console.log(`Repository: ${payload.repository.full_name}`);
+      }
       // Add your team repository access logic here
       break;
     default:
@@ -943,6 +1106,35 @@ const processPullRequestReviewEvent = async (
   }
 };
 
+const processPullRequestReviewCommentEvent = async (
+  payload: GitHubPullRequestReviewCommentPayload
+): Promise<void> => {
+  console.log(
+    `Processing pull request review comment event: ${payload.action}`
+  );
+
+  switch (payload.action) {
+    case "created":
+      console.log(`PR review comment created: ${payload.comment.id}`);
+      console.log(`On PR #${payload.pull_request.number}`);
+      console.log(`By: ${payload.comment.user.login}`);
+      console.log(`File: ${payload.comment.path}`);
+      console.log(`Line: ${payload.comment.position}`);
+      // Add your PR review comment created logic here
+      break;
+    case "edited":
+      console.log(`PR review comment edited: ${payload.comment.id}`);
+      // Add your PR review comment edited logic here
+      break;
+    case "deleted":
+      console.log(`PR review comment deleted: ${payload.comment.id}`);
+      // Add your PR review comment deleted logic here
+      break;
+    default:
+      console.log(`Unhandled PR review comment action: ${payload.action}`);
+  }
+};
+
 const processIssueCommentEvent = async (
   payload: GitHubIssueCommentPayload
 ): Promise<void> => {
@@ -968,6 +1160,28 @@ const processIssueCommentEvent = async (
       break;
     default:
       console.log(`Unhandled issue comment action: ${payload.action}`);
+  }
+};
+
+const processCommitCommentEvent = async (
+  payload: GitHubCommitCommentPayload
+): Promise<void> => {
+  console.log(`Processing commit comment event: ${payload.action}`);
+
+  switch (payload.action) {
+    case "created":
+      console.log(`Commit comment created: ${payload.comment.id}`);
+      console.log(`On commit: ${payload.comment.commit_id}`);
+      console.log(`By: ${payload.comment.user.login}`);
+      if (payload.comment.path) {
+        console.log(`File: ${payload.comment.path}`);
+        console.log(`Line: ${payload.comment.line}`);
+      }
+      console.log(`Body: ${payload.comment.body.substring(0, 100)}...`);
+      // Add your commit comment created logic here
+      break;
+    default:
+      console.log(`Unhandled commit comment action: ${payload.action}`);
   }
 };
 
@@ -1012,6 +1226,135 @@ const processDeleteEvent = async (
       break;
     default:
       console.log(`Unhandled delete ref type: ${payload.ref_type}`);
+  }
+};
+
+const processStatusEvent = async (
+  payload: GitHubStatusPayload
+): Promise<void> => {
+  console.log(`Processing status event`);
+  console.log(`State: ${payload.state}`);
+  console.log(`Context: ${payload.context}`);
+  console.log(`Description: ${payload.description}`);
+  console.log(`SHA: ${payload.sha}`);
+  console.log(`Target URL: ${payload.target_url}`);
+
+  switch (payload.state) {
+    case "success":
+      console.log(`Status check passed: ${payload.context}`);
+      // Add your success status logic here
+      break;
+    case "failure":
+      console.log(`Status check failed: ${payload.context}`);
+      // Add your failure status logic here
+      break;
+    case "error":
+      console.log(`Status check error: ${payload.context}`);
+      // Add your error status logic here
+      break;
+    case "pending":
+      console.log(`Status check pending: ${payload.context}`);
+      // Add your pending status logic here
+      break;
+    default:
+      console.log(`Unhandled status state: ${payload.state}`);
+  }
+};
+
+const processDiscussionEvent = async (
+  payload: GitHubDiscussionPayload
+): Promise<void> => {
+  console.log(`Processing discussion event: ${payload.action}`);
+
+  switch (payload.action) {
+    case "created":
+      console.log(`Discussion created: #${payload.discussion.number}`);
+      console.log(`Title: ${payload.discussion.title}`);
+      console.log(`Category: ${payload.discussion.category.name}`);
+      console.log(`By: ${payload.discussion.user.login}`);
+      // Add your discussion created logic here
+      break;
+    case "edited":
+      console.log(`Discussion edited: #${payload.discussion.number}`);
+      // Add your discussion edited logic here
+      break;
+    case "deleted":
+      console.log(`Discussion deleted: #${payload.discussion.number}`);
+      // Add your discussion deleted logic here
+      break;
+    case "answered":
+      console.log(`Discussion answered: #${payload.discussion.number}`);
+      // Add your discussion answered logic here
+      break;
+    default:
+      console.log(`Unhandled discussion action: ${payload.action}`);
+  }
+};
+
+const processDiscussionCommentEvent = async (
+  payload: GitHubDiscussionCommentPayload
+): Promise<void> => {
+  console.log(`Processing discussion comment event: ${payload.action}`);
+
+  switch (payload.action) {
+    case "created":
+      console.log(`Discussion comment created: ${payload.comment.id}`);
+      console.log(`On discussion #${payload.discussion.number}`);
+      console.log(`By: ${payload.comment.user.login}`);
+      console.log(`Body: ${payload.comment.body.substring(0, 100)}...`);
+      // Add your discussion comment created logic here
+      break;
+    case "edited":
+      console.log(`Discussion comment edited: ${payload.comment.id}`);
+      // Add your discussion comment edited logic here
+      break;
+    case "deleted":
+      console.log(`Discussion comment deleted: ${payload.comment.id}`);
+      // Add your discussion comment deleted logic here
+      break;
+    default:
+      console.log(`Unhandled discussion comment action: ${payload.action}`);
+  }
+};
+
+const processPackageEvent = async (
+  payload: GitHubPackagePayload
+): Promise<void> => {
+  console.log(`Processing package event: ${payload.action}`);
+
+  switch (payload.action) {
+    case "published":
+      console.log(`Package published: ${payload.package.name}`);
+      console.log(`Version: ${payload.package.package_version.version}`);
+      console.log(`Type: ${payload.package.package_type}`);
+      console.log(`By: ${payload.package.owner.login}`);
+      // Add your package published logic here
+      break;
+    case "updated":
+      console.log(`Package updated: ${payload.package.name}`);
+      console.log(`Version: ${payload.package.package_version.version}`);
+      // Add your package updated logic here
+      break;
+    default:
+      console.log(`Unhandled package action: ${payload.action}`);
+  }
+};
+
+const processGollumEvent = async (
+  payload: GitHubGollumPayload
+): Promise<void> => {
+  console.log(`Processing gollum event (wiki)`);
+  console.log(`Repository: ${payload.repository.full_name}`);
+  console.log(`Pages updated: ${payload.pages.length}`);
+
+  for (const page of payload.pages) {
+    console.log(`Page ${page.action}: ${page.title}`);
+    console.log(`Page name: ${page.page_name}`);
+    console.log(`SHA: ${page.sha}`);
+    if (page.summary) {
+      console.log(`Summary: ${page.summary}`);
+    }
+    // Add your wiki page processing logic here
   }
 };
 

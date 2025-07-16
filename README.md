@@ -498,6 +498,10 @@ serverless info
 # View Lambda logs
 serverless logs -f webhookHandler
 
+# Test health check endpoint
+curl -v https://yyk1br4jof.execute-api.eu-west-2.amazonaws.com/dev/health
+
+
 # Test specific webhook event
 curl -X POST https://yyk1br4jof.execute-api.eu-west-2.amazonaws.com/dev/webhook \
   -H "Content-Type: application/json" \

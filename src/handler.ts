@@ -704,23 +704,23 @@ const processRepositoryEvent = async (
   switch (payload.action) {
     case "created":
       console.log(`New repository created: ${payload.repository.full_name}`);
-      // Add your repository creation logic here
+      // Currently only capture the repository creation event full name
       break;
     case "deleted":
       console.log(`Repository deleted: ${payload.repository.full_name}`);
-      // Add your repository deletion logic here
+      // Currently only capture the repository deletion event full name
       break;
     case "archived":
       console.log(`Repository archived: ${payload.repository.full_name}`);
-      // Add your repository archival logic here
+      // Currently only capture the repository archival event full name
       break;
     case "privatized":
       console.log(`Repository made private: ${payload.repository.full_name}`);
-      // Add your repository privatization logic here
+      // Currently only capture the repository privatization event full name
       break;
     case "publicized":
       console.log(`Repository made public: ${payload.repository.full_name}`);
-      // Add your repository publicization logic here
+      // Currently only capture the repository publicization event full name
       break;
     default:
       console.log(`Unhandled repository action: ${payload.action}`);
@@ -735,9 +735,7 @@ const processPushEvent = async (payload: GitHubPushPayload): Promise<void> => {
     console.log(`Commit ${commit.id.substring(0, 7)}: ${commit.message}`);
     console.log(`Author: ${commit.author.name} <${commit.author.email}>`);
   }
-
-  // Add your push event processing logic here
-  // E.g., trigger CI/CD, send notifications, etc.
+  // Add push event processing logic here if any
 };
 
 const processPullRequestEvent = async (
@@ -750,20 +748,16 @@ const processPullRequestEvent = async (
       console.log(`New PR opened: #${payload.pull_request.number}`);
       console.log(`Title: ${payload.pull_request.title}`);
       console.log(`Author: ${payload.pull_request.user.login}`);
-      // Add your PR opened logic here
       break;
     case "closed":
       if (payload.pull_request.merged) {
         console.log(`PR merged: #${payload.pull_request.number}`);
-        // Add your PR merged logic here
       } else {
         console.log(`PR closed without merge: #${payload.pull_request.number}`);
-        // Add your PR closed logic here
       }
       break;
     case "synchronize":
       console.log(`PR updated: #${payload.pull_request.number}`);
-      // Add your PR synchronization logic here
       break;
     default:
       console.log(`Unhandled PR action: ${payload.action}`);
@@ -780,15 +774,12 @@ const processIssuesEvent = async (
       console.log(`New issue opened: #${payload.issue.number}`);
       console.log(`Title: ${payload.issue.title}`);
       console.log(`Author: ${payload.issue.user.login}`);
-      // Add your issue opened logic here
       break;
     case "closed":
       console.log(`Issue closed: #${payload.issue.number}`);
-      // Add your issue closed logic here
       break;
     case "labeled":
       console.log(`Issue labeled: #${payload.issue.number}`);
-      // Add your issue labeling logic here
       break;
     default:
       console.log(`Unhandled issue action: ${payload.action}`);
@@ -809,7 +800,6 @@ const processOrganizationEvent = async (
         console.log(`User: ${payload.membership.user.login}`);
         console.log(`Role: ${payload.membership.role}`);
       }
-      // Add your member added logic here
       break;
     case "member_removed":
       console.log(
@@ -818,7 +808,6 @@ const processOrganizationEvent = async (
       if (payload.membership?.user) {
         console.log(`User: ${payload.membership.user.login}`);
       }
-      // Add your member removed logic here
       break;
     default:
       console.log(`Unhandled organization action: ${payload.action}`);
@@ -831,18 +820,15 @@ const processTeamEvent = async (payload: GitHubTeamPayload): Promise<void> => {
   switch (payload.action) {
     case "created":
       console.log(`New team created: ${payload.team.name}`);
-      // Add your team creation logic here
       break;
     case "deleted":
       console.log(`Team deleted: ${payload.team.name}`);
-      // Add your team deletion logic here
       break;
     case "added_to_repository":
       console.log(`Team added to repository: ${payload.team.name}`);
       if (payload.repository) {
         console.log(`Repository: ${payload.repository.full_name}`);
       }
-      // Add your team repository access logic here
       break;
     default:
       console.log(`Unhandled team action: ${payload.action}`);
@@ -859,15 +845,12 @@ const processWorkflowRunEvent = async (
       console.log(`Workflow completed: ${payload.workflow_run.name}`);
       console.log(`Status: ${payload.workflow_run.status}`);
       console.log(`Conclusion: ${payload.workflow_run.conclusion}`);
-      // Add your workflow completion logic here
       break;
     case "requested":
       console.log(`Workflow requested: ${payload.workflow_run.name}`);
-      // Add your workflow requested logic here
       break;
     case "in_progress":
       console.log(`Workflow in progress: ${payload.workflow_run.name}`);
-      // Add your workflow in progress logic here
       break;
     default:
       console.log(`Unhandled workflow run action: ${payload.action}`);
@@ -882,17 +865,14 @@ const processWorkflowJobEvent = async (
   switch (payload.action) {
     case "queued":
       console.log(`Job queued: ${payload.workflow_job.name}`);
-      // Add your job queued logic here
       break;
     case "in_progress":
       console.log(`Job in progress: ${payload.workflow_job.name}`);
-      // Add your job in progress logic here
       break;
     case "completed":
       console.log(`Job completed: ${payload.workflow_job.name}`);
       console.log(`Status: ${payload.workflow_job.status}`);
       console.log(`Conclusion: ${payload.workflow_job.conclusion}`);
-      // Add your job completion logic here
       break;
     default:
       console.log(`Unhandled workflow job action: ${payload.action}`);
@@ -909,11 +889,9 @@ const processCheckSuiteEvent = async (
       console.log(`Check suite completed: ${payload.check_suite.head_sha}`);
       console.log(`Status: ${payload.check_suite.status}`);
       console.log(`Conclusion: ${payload.check_suite.conclusion}`);
-      // Add your check suite completion logic here
       break;
     case "requested":
       console.log(`Check suite requested: ${payload.check_suite.head_sha}`);
-      // Add your check suite requested logic here
       break;
     default:
       console.log(`Unhandled check suite action: ${payload.action}`);
@@ -928,13 +906,11 @@ const processCheckRunEvent = async (
   switch (payload.action) {
     case "created":
       console.log(`Check run created: ${payload.check_run.name}`);
-      // Add your check run created logic here
       break;
     case "completed":
       console.log(`Check run completed: ${payload.check_run.name}`);
       console.log(`Status: ${payload.check_run.status}`);
       console.log(`Conclusion: ${payload.check_run.conclusion}`);
-      // Add your check run completion logic here
       break;
     default:
       console.log(`Unhandled check run action: ${payload.action}`);
@@ -952,15 +928,12 @@ const processReleaseEvent = async (
       console.log(`Name: ${payload.release.name}`);
       console.log(`Draft: ${payload.release.draft}`);
       console.log(`Prerelease: ${payload.release.prerelease}`);
-      // Add your release published logic here
       break;
     case "created":
       console.log(`Release created: ${payload.release.tag_name}`);
-      // Add your release created logic here
       break;
     case "edited":
       console.log(`Release edited: ${payload.release.tag_name}`);
-      // Add your release edited logic here
       break;
     default:
       console.log(`Unhandled release action: ${payload.action}`);
@@ -975,13 +948,11 @@ const processStarEvent = async (payload: GitHubStarPayload): Promise<void> => {
       console.log(`Repository starred: ${payload.repository.full_name}`);
       console.log(`By: ${payload.sender.login}`);
       console.log(`Total stars: ${payload.repository.stargazers_count}`);
-      // Add your star created logic here
       break;
     case "deleted":
       console.log(`Repository unstarred: ${payload.repository.full_name}`);
       console.log(`By: ${payload.sender.login}`);
       console.log(`Total stars: ${payload.repository.stargazers_count}`);
-      // Add your star deleted logic here
       break;
     default:
       console.log(`Unhandled star action: ${payload.action}`);
@@ -1023,12 +994,10 @@ const processMemberEvent = async (
     case "added":
       console.log(`Member added: ${payload.member.login}`);
       console.log(`To repository: ${payload.repository.full_name}`);
-      // Add your member added logic here
       break;
     case "removed":
       console.log(`Member removed: ${payload.member.login}`);
       console.log(`From repository: ${payload.repository.full_name}`);
-      // Add your member removed logic here
       break;
     case "edited":
       console.log(`Member edited: ${payload.member.login}`);
@@ -1037,7 +1006,6 @@ const processMemberEvent = async (
           `Permission changed from ${payload.changes.permission.from} to ${payload.changes.permission.to}`
         );
       }
-      // Add your member edited logic here
       break;
     default:
       console.log(`Unhandled member action: ${payload.action}`);
@@ -1055,7 +1023,6 @@ const processDeploymentEvent = async (
       console.log(`Environment: ${payload.deployment.environment}`);
       console.log(`SHA: ${payload.deployment.sha}`);
       console.log(`Ref: ${payload.deployment.ref}`);
-      // Add your deployment created logic here
       break;
     default:
       console.log(`Unhandled deployment action: ${payload.action}`);
@@ -1073,7 +1040,6 @@ const processDeploymentStatusEvent = async (
       console.log(`State: ${payload.deployment_status.state}`);
       console.log(`Environment: ${payload.deployment_status.environment}`);
       console.log(`Description: ${payload.deployment_status.description}`);
-      // Add your deployment status created logic here
       break;
     default:
       console.log(`Unhandled deployment status action: ${payload.action}`);
@@ -1091,15 +1057,12 @@ const processPullRequestReviewEvent = async (
       console.log(`State: ${payload.review.state}`);
       console.log(`PR #${payload.pull_request.number}`);
       console.log(`By: ${payload.review.user.login}`);
-      // Add your PR review submitted logic here
       break;
     case "edited":
       console.log(`PR review edited: ${payload.review.id}`);
-      // Add your PR review edited logic here
       break;
     case "dismissed":
       console.log(`PR review dismissed: ${payload.review.id}`);
-      // Add your PR review dismissed logic here
       break;
     default:
       console.log(`Unhandled PR review action: ${payload.action}`);
@@ -1120,15 +1083,12 @@ const processPullRequestReviewCommentEvent = async (
       console.log(`By: ${payload.comment.user.login}`);
       console.log(`File: ${payload.comment.path}`);
       console.log(`Line: ${payload.comment.position}`);
-      // Add your PR review comment created logic here
       break;
     case "edited":
       console.log(`PR review comment edited: ${payload.comment.id}`);
-      // Add your PR review comment edited logic here
       break;
     case "deleted":
       console.log(`PR review comment deleted: ${payload.comment.id}`);
-      // Add your PR review comment deleted logic here
       break;
     default:
       console.log(`Unhandled PR review comment action: ${payload.action}`);
@@ -1146,17 +1106,14 @@ const processIssueCommentEvent = async (
       console.log(`On issue #${payload.issue.number}`);
       console.log(`By: ${payload.comment.user.login}`);
       console.log(`Body: ${payload.comment.body.substring(0, 100)}...`);
-      // Add your issue comment created logic here
       break;
     case "edited":
       console.log(`Issue comment edited: ${payload.comment.id}`);
       console.log(`On issue #${payload.issue.number}`);
-      // Add your issue comment edited logic here
       break;
     case "deleted":
       console.log(`Issue comment deleted: ${payload.comment.id}`);
       console.log(`On issue #${payload.issue.number}`);
-      // Add your issue comment deleted logic here
       break;
     default:
       console.log(`Unhandled issue comment action: ${payload.action}`);
@@ -1178,7 +1135,6 @@ const processCommitCommentEvent = async (
         console.log(`Line: ${payload.comment.line}`);
       }
       console.log(`Body: ${payload.comment.body.substring(0, 100)}...`);
-      // Add your commit comment created logic here
       break;
     default:
       console.log(`Unhandled commit comment action: ${payload.action}`);
@@ -1196,11 +1152,9 @@ const processCreateEvent = async (
   switch (payload.ref_type) {
     case "branch":
       console.log(`New branch created: ${payload.ref}`);
-      // Add your branch creation logic here
       break;
     case "tag":
       console.log(`New tag created: ${payload.ref}`);
-      // Add your tag creation logic here
       break;
     default:
       console.log(`Unhandled create ref type: ${payload.ref_type}`);
@@ -1218,11 +1172,9 @@ const processDeleteEvent = async (
   switch (payload.ref_type) {
     case "branch":
       console.log(`Branch deleted: ${payload.ref}`);
-      // Add your branch deletion logic here
       break;
     case "tag":
       console.log(`Tag deleted: ${payload.ref}`);
-      // Add your tag deletion logic here
       break;
     default:
       console.log(`Unhandled delete ref type: ${payload.ref_type}`);
@@ -1242,19 +1194,15 @@ const processStatusEvent = async (
   switch (payload.state) {
     case "success":
       console.log(`Status check passed: ${payload.context}`);
-      // Add your success status logic here
       break;
     case "failure":
       console.log(`Status check failed: ${payload.context}`);
-      // Add your failure status logic here
       break;
     case "error":
       console.log(`Status check error: ${payload.context}`);
-      // Add your error status logic here
       break;
     case "pending":
       console.log(`Status check pending: ${payload.context}`);
-      // Add your pending status logic here
       break;
     default:
       console.log(`Unhandled status state: ${payload.state}`);
@@ -1272,19 +1220,15 @@ const processDiscussionEvent = async (
       console.log(`Title: ${payload.discussion.title}`);
       console.log(`Category: ${payload.discussion.category.name}`);
       console.log(`By: ${payload.discussion.user.login}`);
-      // Add your discussion created logic here
       break;
     case "edited":
       console.log(`Discussion edited: #${payload.discussion.number}`);
-      // Add your discussion edited logic here
       break;
     case "deleted":
       console.log(`Discussion deleted: #${payload.discussion.number}`);
-      // Add your discussion deleted logic here
       break;
     case "answered":
       console.log(`Discussion answered: #${payload.discussion.number}`);
-      // Add your discussion answered logic here
       break;
     default:
       console.log(`Unhandled discussion action: ${payload.action}`);
@@ -1302,15 +1246,12 @@ const processDiscussionCommentEvent = async (
       console.log(`On discussion #${payload.discussion.number}`);
       console.log(`By: ${payload.comment.user.login}`);
       console.log(`Body: ${payload.comment.body.substring(0, 100)}...`);
-      // Add your discussion comment created logic here
       break;
     case "edited":
       console.log(`Discussion comment edited: ${payload.comment.id}`);
-      // Add your discussion comment edited logic here
       break;
     case "deleted":
       console.log(`Discussion comment deleted: ${payload.comment.id}`);
-      // Add your discussion comment deleted logic here
       break;
     default:
       console.log(`Unhandled discussion comment action: ${payload.action}`);
@@ -1328,12 +1269,10 @@ const processPackageEvent = async (
       console.log(`Version: ${payload.package.package_version.version}`);
       console.log(`Type: ${payload.package.package_type}`);
       console.log(`By: ${payload.package.owner.login}`);
-      // Add your package published logic here
       break;
     case "updated":
       console.log(`Package updated: ${payload.package.name}`);
       console.log(`Version: ${payload.package.package_version.version}`);
-      // Add your package updated logic here
       break;
     default:
       console.log(`Unhandled package action: ${payload.action}`);
@@ -1354,7 +1293,6 @@ const processGollumEvent = async (
     if (page.summary) {
       console.log(`Summary: ${page.summary}`);
     }
-    // Add your wiki page processing logic here
   }
 };
 
@@ -1366,31 +1304,24 @@ const processAuditLogEvent = async (
     `Processing audit event: ${event.action} by ${event.actor.login}`
   );
 
-  // Handle different audit log event types
   switch (event.action) {
     case "repo.create":
       console.log(`Repository created: ${event.resource}`);
-      // Add your audit log processing logic here
       break;
     case "repo.destroy":
       console.log(`Repository deleted: ${event.resource}`);
-      // Add your audit log processing logic here
       break;
     case "team.create":
       console.log(`Team created: ${event.resource}`);
-      // Add your audit log processing logic here
       break;
     case "org.invite_member":
       console.log(`Member invited to org: ${event.resource}`);
-      // Add your audit log processing logic here
       break;
     case "user.login":
       console.log(`User login: ${event.actor.login}`);
-      // Add your audit log processing logic here
       break;
     case "user.logout":
       console.log(`User logout: ${event.actor.login}`);
-      // Add your audit log processing logic here
       break;
     default:
       console.log(`Unhandled audit event: ${event.action}`);

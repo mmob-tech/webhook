@@ -111,7 +111,7 @@ Create a `.env` file for local development:
 cp .env.example .env
 
 # Edit the file with your values
-GITHUB_WEBHOOK_SECRET=your-super-secret-webhook-key-here
+GITHUB_WEBHOOK_SECRET=your-github-secret-webhook
 ```
 
 **Generate a secure webhook secret:**

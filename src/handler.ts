@@ -35,7 +35,48 @@ import {
   WebhookPayload,
 } from "./types/webhook";
 import { validateWebhookPayload } from "./utils/validator";
+export const healthCheck = async (
+  event: APIGatewayEvent,
+  context: Context,
+  callback: Callback
+) => {
+  try {
+    // Basic health check information
+    const healthData = {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      service: "github-webhook-handler",
+      version: process.env.SERVICE_VERSION || "1.0.0",
+      environment: process.env.NODE_ENV || "production",
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      // Check if webhook secret is configured
+      secretConfigured: !!process.env.GITHUB_WEBHOOK_SECRET,
+    };
 
+    return callback(null, {
+      statusCode: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+      body: JSON.stringify(healthData),
+    });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    return callback(null, {
+      statusCode: 503,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: "unhealthy",
+        timestamp: new Date().toISOString(),
+        error: "Health check failed",
+      }),
+    });
+  }
+};
 export const webhookHandler = async (
   event: APIGatewayEvent,
   context: Context,

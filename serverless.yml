@@ -16,6 +16,15 @@ provider:
         - "arn:aws:logs:eu-west-2:*:*"
 
 functions:
+  healthCheck:
+    handler: src/handler.healthCheck
+    events:
+      - http:
+          path: health
+          method: get
+          cors: false
+    timeout: 10
+    memorySize: 128
   webhookHandler:
     handler: src/handler.webhookHandler
     events:
@@ -23,6 +32,8 @@ functions:
           path: webhook
           method: post
           cors: true
+    timeout: 90
+    memorySize: 256
 
 plugins:
   - serverless-offline

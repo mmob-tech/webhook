@@ -1,6 +1,6 @@
 # GitHub Webhook Handler
 
-This project is an AWS Lambda function that processes GitHub webhook events for comprehensive repository monitoring and automation. It validates incoming event data and triggers appropriate actions based on the event type, supporting all major GitHub webhook events.
+This project is an AWS Lambda function that processes GitHub webhook events for comprehensive repository monitoring and automation. It validates incoming event data and triggers appropriate actions based on the event type, supporting all major GitHub webhook events with **secure signature validation**.
 
 ## Project Structure
 
@@ -12,10 +12,12 @@ webhook
 │   ├── types
 │   │   └── github.ts       # TypeScript interfaces for GitHub webhook events
 │   └── utils
-│       └── validator.ts    # Utility functions for validating webhook data
+│       ├── validator.ts    # Utility functions for validating webhook data
+│       └── signature.ts    # Webhook signature verification utilities
 ├── package.json            # npm configuration file
 ├── tsconfig.json           # TypeScript configuration file
 ├── serverless.yml          # Serverless Framework configuration file
+├── .env            # Environment variable template
 └── README.md               # Project documentation
 ```
 
@@ -86,75 +88,186 @@ This handler supports all major GitHub webhook events, organized by category:
 
 - **`audit_log_streaming`** - Organization audit log events (requires special validation)
 
-## Features
-
-### **Comprehensive Event Processing**
-
-- **All GitHub webhook events** supported
-- **Type-safe TypeScript interfaces** for all event payloads
-- **Consistent response format** for all event types
-- **Detailed event information** extracted and logged
-
-### **Robust Error Handling**
-
-- **JSON parsing errors** handled gracefully
-- **Missing headers** detection and reporting
-- **Unsupported events** with helpful error messages
-- **Validation failures** for special events like audit logs
-
-### **Production-Ready**
-
-- **Full event test coverage** with comprehensive test suite
-- **AWS Lambda optimized** for serverless deployment
-- **Structured logging** for monitoring and debugging
-- **Scalable architecture** for high-volume webhooks
-
 ## Setup Instructions
 
-1. **Install dependencies:**
+### **1. Prerequisites**
 
-   ```bash
-   npm install
+- Node.js 20.x or later
+- AWS CLI configured
+- Serverless Framework installed globally
+
+### **2. Install Dependencies**
+
+```bash
+npm install
+```
+
+### **3. Environment Configuration**
+
+Create a `.env` file for local development:
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit the file with your values
+GITHUB_WEBHOOK_SECRET=your-super-secret-webhook-key-here
+```
+
+**Generate a secure webhook secret:**
+
+```bash
+# Use openssl to generate a secure random string
+openssl rand -base64 32
+
+# Or use Node.js
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+### **4. AWS Configuration**
+
+```bash
+# Set environment variable for deployment
+export GITHUB_WEBHOOK_SECRET="your-super-secret-webhook-key-here"
+```
+
+### **5. Deploy the Lambda Function**
+
+```bash
+# Deploy to AWS
+npm run deploy
+
+```
+
+### **6. Test the Deployment**
+
+```bash
+# Run comprehensive test suite
+npm test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Test specific event types
+npm test -- --testNamePattern="Pull Request"
+```
+
+## GitHub Webhook Configuration
+
+### **Repository Webhooks**
+
+1. **Navigate to Repository Settings**
+
+   - Go to your repository on GitHub
+   - Click on "Settings" tab
+   - Select "Webhooks" from the left sidebar
+
+2. **Add New Webhook**
+
+   - Click "Add webhook"
+   - **Payload URL**: Your Lambda endpoint (from `serverless deploy` output)
+   - **Content type**: `application/json`
+   - **Secret**: Enter your webhook secret (same as `GITHUB_WEBHOOK_SECRET`)
+   - **SSL verification**: ✅ Enable SSL verification
+   - **Which events**: Select individual events or "Send me everything"
+
+3. **Event Selection Examples**
+   ```
+   Repository events: repository, push, create, delete, fork, star, watch
+   Pull Request events: pull_request, pull_request_review, pull_request_review_comment
+   Issue events: issues, issue_comment
+   Workflow events: workflow_run, workflow_job, check_suite, check_run
    ```
 
-2. **Configure AWS credentials:**
-   Ensure that your AWS credentials are configured properly. You can set them up using the AWS CLI or by creating a `.env` file.
+### **Organization Webhooks**
 
-3. **Deploy the Lambda function:**
-   Use the Serverless Framework to deploy the function:
+1. **Navigate to Organization Settings**
 
-   ```bash
-   npm run deploy
-   ```
+   - Go to your organization on GitHub
+   - Click on "Settings" tab
+   - Select "Webhooks" from the left sidebar
 
-4. **Run tests:**
-   Execute the comprehensive test suite:
-   ```bash
-   npm test
-   ```
+2. **Configure Organization-Wide Events**
+   - Follow same setup as repository webhooks
+   - Additional events: `organization`, `team`, `member`
+   - **Audit log streaming**: Enable for `audit_log_streaming` events
 
-## Usage
+### **Webhook Security Configuration**
 
-Once deployed, the Lambda function will listen for GitHub webhook events. You can configure your GitHub repository or organization to send webhook events to the endpoint provided by the Serverless Framework after deployment.
+```json
+{
+  "name": "GitHub Webhook Handler",
+  "url": "https://your-api-gateway-url.amazonaws.com/dev/webhook",
+  "content_type": "application/json",
+  "secret": "your-super-secret-webhook-key-here",
+  "insecure_ssl": false,
+  "events": ["push", "pull_request", "issues", "workflow_run"]
+}
+```
 
-### **Webhook Configuration**
+## Security Implementation
 
-1. **Repository Webhooks:**
+### **Signature Validation Process**
 
-   - Go to your repository settings
-   - Navigate to "Webhooks"
-   - Add webhook with your Lambda endpoint URL
-   - Select individual events or "Send me everything"
+1. **GitHub generates signature** using your webhook secret
+2. **Signature sent in header** as `X-Hub-Signature-256`
+3. **Lambda validates signature** using HMAC-SHA256
+4. **Timing-safe comparison** prevents timing attacks
+5. **Request rejected** if signature doesn't match
 
-2. **Organization Webhooks:**
-   - Go to organization settings
-   - Navigate to "Webhooks"
-   - Add webhook for organization-wide events
-   - Configure audit log streaming if needed
+### **Signature Validation Code**
 
-### **Response Format**
+```typescript
+// Verify GitHub webhook signature
+const verifyGitHubSignature = (
+  payload: string,
+  signature: string,
+  secret: string
+): boolean => {
+  try {
+    const expectedSignature = `sha256=${crypto
+      .createHmac("sha256", secret)
+      .update(payload, "utf8")
+      .digest("hex")}`;
 
-All webhook events return a consistent JSON response:
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (error) {
+    return false;
+  }
+};
+```
+
+### **Security Best Practices**
+
+1. **🔐 Use Strong Secrets**
+
+   - Generate cryptographically secure random strings (32+ characters)
+   - Use base64 encoding for easy handling
+   - Rotate secrets regularly
+
+2. **🛡️ Secure Secret Storage**
+
+   - Use AWS Secrets Manager for production
+   - Use AWS Systems Manager Parameter Store for staging
+   - Never commit secrets to version control
+
+3. **🔍 Monitor Security Events**
+
+   - Log all signature validation failures
+   - Set up CloudWatch alarms for repeated failures
+   - Monitor for unusual request patterns
+
+4. **🚨 Incident Response**
+   - Rotate webhook secrets if compromised
+   - Update both GitHub and Lambda configuration
+   - Review logs for any unauthorized access
+
+## Response Format
+
+### **Successful Responses**
 
 ```json
 {
@@ -162,7 +275,9 @@ All webhook events return a consistent JSON response:
   "body": {
     "message": "Event type processed successfully",
     "event_data": {
-      // Relevant event information
+      "repository": "my-org/test-repo",
+      "action": "opened",
+      "details": "..."
     }
   }
 }
@@ -170,14 +285,54 @@ All webhook events return a consistent JSON response:
 
 ### **Error Responses**
 
+**Missing Signature:**
+
+```json
+{
+  "statusCode": 401,
+  "body": {
+    "message": "Missing signature header"
+  }
+}
+```
+
+**Invalid Signature:**
+
+```json
+{
+  "statusCode": 401,
+  "body": {
+    "message": "Invalid signature"
+  }
+}
+```
+
+**Unsupported Event:**
+
 ```json
 {
   "statusCode": 400,
   "body": {
     "message": "Unsupported GitHub event: event_name",
     "supported_events": [
-      // List of all supported events
+      "ping",
+      "repository",
+      "push",
+      "pull_request",
+      "issues",
+      "..."
     ]
+  }
+}
+```
+
+**Configuration Error:**
+
+```json
+{
+  "statusCode": 500,
+  "body": {
+    "message": "Webhook secret not configured"
   }
 }
 ```
@@ -186,24 +341,23 @@ All webhook events return a consistent JSON response:
 
 ### **Adding New Event Types**
 
-1. **Update handler.ts** - Add new event case
+1. **Update handler.ts** - Add new event case with signature validation
 2. **Update types/github.ts** - Add TypeScript interfaces
-3. **Add tests** - Create comprehensive test cases
+3. **Add comprehensive tests** - Include signature validation tests
 4. **Update README.md** - Document the new event type
 
-### **Testing**
+### **Testing with Signatures**
 
-The project includes a comprehensive test suite covering:
+```typescript
+// Test pattern for all webhook events
+const body = JSON.stringify(payload);
+const signature = generateWebhookSignature(body, testSecret);
 
-- **All supported webhook events**
-- **Error handling scenarios**
-- **Edge cases and validation**
-- **Mock AWS Lambda context**
+mockEvent.headers["X-GitHub-Event"] = "event_name";
+mockEvent.headers["X-Hub-Signature-256"] = signature;
+mockEvent.body = body;
 
-Run tests with:
-
-```bash
-npm test
+await webhookHandler(mockEvent, mockContext, mockCallback);
 ```
 
 ### **Local Development**
@@ -212,23 +366,43 @@ npm test
 # Install dependencies
 npm install
 
-# Run tests
+# Run tests with signature validation
 npm test
+
+# Run tests in watch mode
+npm run test:watch
 
 # Type checking
 npm run type-check
 
 # Build project
 npm run build
+
+# Local development with serverless-offline
+serverless offline
+```
+
+### **Testing Webhook Signatures Locally**
+
+```bash
+# Test signature generation
+node -e "
+const crypto = require('crypto');
+const payload = JSON.stringify({test: 'data'});
+const secret = 'your-secret';
+const signature = 'sha256=' + crypto.createHmac('sha256', secret).update(payload).digest('hex');
+console.log('Signature:', signature);
+"
 ```
 
 ## Event Processing Examples
 
-### **Pull Request Events**
+### **Pull Request Events (with Security)**
 
 ```typescript
-// Handles: opened, closed, merged, edited, etc.
+// Signature validation happens before event processing
 case "pull_request":
+  await processPullRequestEvent(payload as GitHubPullRequestPayload);
   return {
     statusCode: 200,
     body: JSON.stringify({
@@ -240,11 +414,12 @@ case "pull_request":
   };
 ```
 
-### **Push Events**
+### **Push Events (with Security)**
 
 ```typescript
-// Handles: code pushes with commit details
+// All events require valid signatures
 case "push":
+  await processPushEvent(payload as GitHubPushPayload);
   return {
     statusCode: 200,
     body: JSON.stringify({
@@ -256,11 +431,12 @@ case "push":
   };
 ```
 
-### **Workflow Events**
+### **Workflow Events (with Security)**
 
 ```typescript
-// Handles: GitHub Actions workflow runs
+// Secure workflow event processing
 case "workflow_run":
+  await processWorkflowRunEvent(payload as GitHubWorkflowRunPayload);
   return {
     statusCode: 200,
     body: JSON.stringify({
@@ -272,4 +448,96 @@ case "workflow_run":
   };
 ```
 
-**Note:** This webhook handler is designed for production use and includes comprehensive error handling, logging, and monitoring capabilities for enterprise GitHub environments.
+## Monitoring and Logging
+
+### **CloudWatch Metrics**
+
+The handler automatically logs:
+
+- **Successful webhook processing** with event details
+- **Signature validation failures** with source IP
+- **Processing errors** with full error context
+- **Performance metrics** for each event type
+
+### **Log Examples**
+
+```
+INFO: Webhook signature validated successfully
+INFO: Received GitHub webhook event: pull_request
+INFO: Processing pull request opened event
+INFO: Pull request #123 opened in my-org/test-repo
+
+ERROR: Invalid webhook signature from IP: 192.168.1.1
+ERROR: Missing X-Hub-Signature-256 header
+ERROR: Webhook secret not configured
+```
+
+### **Alerting Setup**
+
+```yaml
+# CloudWatch Alarms
+SignatureValidationFailures:
+  Type: AWS::CloudWatch::Alarm
+  Properties:
+    AlarmName: GitHub-Webhook-Invalid-Signatures
+    MetricName: SignatureValidationFailures
+    Threshold: 5
+    ComparisonOperator: GreaterThanThreshold
+    EvaluationPeriods: 2
+    Period: 300
+```
+
+## Troubleshooting
+
+### **Common Issues**
+
+1. **Signature Validation Failures**
+
+   - Verify webhook secret matches in GitHub and Lambda
+   - Check for trailing whitespace in secret
+   - Ensure content-type is `application/json`
+
+2. **Missing Environment Variables**
+
+   - Verify `GITHUB_WEBHOOK_SECRET` is set
+   - Check serverless.yml environment configuration
+   - Validate AWS parameter store/secrets manager setup
+
+3. **Deployment Issues**
+
+   - Ensure AWS credentials are configured
+   - Check IAM permissions for Lambda execution
+   - Verify API Gateway configuration
+
+4. **Testing Issues**
+   - Use correct signature generation in tests
+   - Verify test secret matches handler expectations
+   - Check mock setup for all required headers
+
+### **Debug Commands**
+
+```bash
+# Check environment variables
+serverless info
+
+# View Lambda logs
+serverless logs -f webhookHandler
+
+# Test specific webhook event
+curl -X POST https://yyk1br4jof.execute-api.eu-west-2.amazonaws.com/dev/webhook \
+  -H "Content-Type: application/json" \
+  -H "X-GitHub-Event: ping" \
+  -H "X-Hub-Signature-256: sha256=your-signature" \
+  -d '{"zen":"test"}'
+```
+
+### **Security Considerations**
+
+- Never commit webhook secrets to version control
+- Test signature validation for all new event types
+- Follow secure coding practices
+- Review security implications of changes
+
+**🔒 Security Notice:** This webhook handler implements GitHub's recommended security practices including HMAC-SHA256 signature validation and timing-safe comparison. It's designed for production use in enterprise environments with comprehensive error handling, logging, and monitoring capabilities.
+
+**⚠️ Important:** Always use HTTPS endpoints and never expose webhook secrets. Rotate secrets regularly and monitor for unauthorized access attempts.

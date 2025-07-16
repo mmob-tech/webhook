@@ -240,31 +240,6 @@ const verifyGitHubSignature = (
 };
 ```
 
-### **Security Best Practices**
-
-1. **🔐 Use Strong Secrets**
-
-   - Generate cryptographically secure random strings (32+ characters)
-   - Use base64 encoding for easy handling
-   - Rotate secrets regularly
-
-2. **🛡️ Secure Secret Storage**
-
-   - Use AWS Secrets Manager for production
-   - Use AWS Systems Manager Parameter Store for staging
-   - Never commit secrets to version control
-
-3. **🔍 Monitor Security Events**
-
-   - Log all signature validation failures
-   - Set up CloudWatch alarms for repeated failures
-   - Monitor for unusual request patterns
-
-4. **🚨 Incident Response**
-   - Rotate webhook secrets if compromised
-   - Update both GitHub and Lambda configuration
-   - Review logs for any unauthorized access
-
 ## Response Format
 
 ### **Successful Responses**

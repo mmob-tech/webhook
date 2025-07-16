@@ -90,7 +90,7 @@ This handler supports all major GitHub webhook events, organized by category:
 
 ### **Comprehensive Event Processing**
 
-- **All 30+ GitHub webhook events** supported
+- **All GitHub webhook events** supported
 - **Type-safe TypeScript interfaces** for all event payloads
 - **Consistent response format** for all event types
 - **Detailed event information** extracted and logged
@@ -104,7 +104,7 @@ This handler supports all major GitHub webhook events, organized by category:
 
 ### **Production-Ready**
 
-- **100% test coverage** with comprehensive test suite
+- **Full event test coverage** with comprehensive test suite
 - **AWS Lambda optimized** for serverless deployment
 - **Structured logging** for monitoring and debugging
 - **Scalable architecture** for high-volume webhooks
@@ -124,7 +124,7 @@ This handler supports all major GitHub webhook events, organized by category:
    Use the Serverless Framework to deploy the function:
 
    ```bash
-   serverless deploy
+   npm run deploy
    ```
 
 4. **Run tests:**
@@ -271,32 +271,5 @@ case "workflow_run":
     })
   };
 ```
-
-## Contributing
-
-Feel free to submit issues or pull requests if you have suggestions or improvements for the project.
-
-### **Contribution Guidelines**
-
-1. **Fork the repository**
-2. **Create a feature branch**
-3. **Add tests for new functionality**
-4. **Ensure all tests pass**
-5. **Update documentation**
-6. **Submit a pull request**
-
-## License
-
-This project is licensed under the MIT License.
-
-## Support
-
-For issues and questions:
-
-- **GitHub Issues** - Report bugs and request features
-- **Documentation** - Check this README and code comments
-- **Tests** - Review test cases for usage examples
-
----
 
 **Note:** This webhook handler is designed for production use and includes comprehensive error handling, logging, and monitoring capabilities for enterprise GitHub environments.

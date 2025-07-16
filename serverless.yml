@@ -4,6 +4,8 @@ provider:
   name: aws
   runtime: nodejs20.x
   region: eu-west-2
+  environment:
+    GITHUB_WEBHOOK_SECRET: ${env:GITHUB_WEBHOOK_SECRET}
   iamRoleStatements:
     - Effect: Allow
       Action:

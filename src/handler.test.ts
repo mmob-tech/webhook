@@ -1,5 +1,6 @@
 import { APIGatewayEvent, Callback, Context } from "aws-lambda";
 import { webhookHandler } from "./handler";
+import { generateWebhookSignature } from "./utils/signature";
 import { validateWebhookPayload } from "./utils/validator";
 
 // Mock the validator
@@ -11,8 +12,10 @@ describe("webhookHandler", () => {
   let mockEvent: APIGatewayEvent;
   let mockContext: Context;
   let mockCallback: Callback;
+  const testSecret = "test-webhook-secret";
 
   beforeEach(() => {
+    process.env.GITHUB_WEBHOOK_SECRET = testSecret;
     mockEvent = {
       body: null,
       headers: {},
@@ -48,6 +51,67 @@ describe("webhookHandler", () => {
 
     // Reset all mocks
     jest.clearAllMocks();
+  });
+  describe("Signature validation", () => {
+    it("should reject requests without signature", async () => {
+      const pingPayload = {
+        zen: "Non-blocking is better than blocking.",
+        hook_id: 123456,
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "ping";
+      mockEvent.body = JSON.stringify(pingPayload);
+      // Don't set signature header
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 401,
+        body: JSON.stringify({ message: "Missing signature header" }),
+      });
+    });
+
+    it("should reject requests with invalid signature", async () => {
+      const pingPayload = {
+        zen: "Non-blocking is better than blocking.",
+        hook_id: 123456,
+      };
+
+      mockEvent.headers["X-GitHub-Event"] = "ping";
+      mockEvent.headers["X-Hub-Signature-256"] = "sha256=invalid-signature";
+      mockEvent.body = JSON.stringify(pingPayload);
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 401,
+        body: JSON.stringify({ message: "Invalid signature" }),
+      });
+    });
+
+    it("should accept requests with valid signature", async () => {
+      const pingPayload = {
+        zen: "Non-blocking is better than blocking.",
+        hook_id: 123456,
+      };
+
+      const body = JSON.stringify(pingPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.headers["X-GitHub-Event"] = "ping";
+      mockEvent.body = body;
+
+      await webhookHandler(mockEvent, mockContext, mockCallback);
+
+      expect(mockCallback).toHaveBeenCalledWith(null, {
+        statusCode: 200,
+        body: JSON.stringify({
+          message: "Ping received successfully",
+          zen: pingPayload.zen,
+          hook_id: pingPayload.hook_id,
+        }),
+      });
+    });
   });
 
   describe("Ping event", () => {
@@ -90,7 +154,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "ping";
-      mockEvent.body = JSON.stringify(pingPayload);
+      const body = JSON.stringify(pingPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.body = body;
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -133,8 +200,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "repository";
-      mockEvent.body = JSON.stringify(repoPayload);
-
+      const body = JSON.stringify(repoPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
       expect(mockCallback).toHaveBeenCalledWith(null, {
@@ -174,7 +243,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "repository";
-      mockEvent.body = JSON.stringify(repoPayload);
+      const body = JSON.stringify(repoPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -234,7 +306,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "push";
-      mockEvent.body = JSON.stringify(pushPayload);
+      const body = JSON.stringify(pushPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -299,7 +374,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "pull_request";
-      mockEvent.body = JSON.stringify(prPayload);
+      const body = JSON.stringify(prPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -363,7 +441,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "pull_request";
-      mockEvent.body = JSON.stringify(prPayload);
+      const body = JSON.stringify(prPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -419,7 +500,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "issues";
-      mockEvent.body = JSON.stringify(issuesPayload);
+      const body = JSON.stringify(issuesPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -464,7 +548,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "organization";
-      mockEvent.body = JSON.stringify(orgPayload);
+      const body = JSON.stringify(orgPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -504,7 +591,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "team";
-      mockEvent.body = JSON.stringify(teamPayload);
+      const body = JSON.stringify(teamPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -622,7 +712,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "workflow_run";
-      mockEvent.body = JSON.stringify(workflowRunPayload);
+      const body = JSON.stringify(workflowRunPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -693,7 +786,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "workflow_job";
-      mockEvent.body = JSON.stringify(workflowJobPayload);
+      const body = JSON.stringify(workflowJobPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -772,7 +868,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "check_suite";
-      mockEvent.body = JSON.stringify(checkSuitePayload);
+      const body = JSON.stringify(checkSuitePayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -874,7 +973,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "check_run";
-      mockEvent.body = JSON.stringify(checkRunPayload);
+      const body = JSON.stringify(checkRunPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -934,7 +1036,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "release";
-      mockEvent.body = JSON.stringify(releasePayload);
+      const body = JSON.stringify(releasePayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -972,7 +1077,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "star";
-      mockEvent.body = JSON.stringify(starPayload);
+      const body = JSON.stringify(starPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1009,7 +1117,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "watch";
-      mockEvent.body = JSON.stringify(watchPayload);
+      const body = JSON.stringify(watchPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1060,7 +1171,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "fork";
-      mockEvent.body = JSON.stringify(forkPayload);
+      const body = JSON.stringify(forkPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1099,7 +1213,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "member";
-      mockEvent.body = JSON.stringify(memberPayload);
+      const body = JSON.stringify(memberPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1152,7 +1269,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "deployment";
-      mockEvent.body = JSON.stringify(deploymentPayload);
+      const body = JSON.stringify(deploymentPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1219,7 +1339,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "deployment_status";
-      mockEvent.body = JSON.stringify(deploymentStatusPayload);
+      const body = JSON.stringify(deploymentStatusPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1288,7 +1411,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "pull_request_review";
-      mockEvent.body = JSON.stringify(prReviewPayload);
+      const body = JSON.stringify(prReviewPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1364,7 +1490,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "pull_request_review_comment";
-      mockEvent.body = JSON.stringify(prReviewCommentPayload);
+      const body = JSON.stringify(prReviewCommentPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1424,7 +1553,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "issue_comment";
-      mockEvent.body = JSON.stringify(issueCommentPayload);
+      const body = JSON.stringify(issueCommentPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1475,7 +1607,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "commit_comment";
-      mockEvent.body = JSON.stringify(commitCommentPayload);
+      const body = JSON.stringify(commitCommentPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1511,7 +1646,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "create";
-      mockEvent.body = JSON.stringify(createPayload);
+      const body = JSON.stringify(createPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1545,7 +1683,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "create";
-      mockEvent.body = JSON.stringify(createPayload);
+      const body = JSON.stringify(createPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1579,7 +1720,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "delete";
-      mockEvent.body = JSON.stringify(deletePayload);
+      const body = JSON.stringify(deletePayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1611,7 +1755,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "delete";
-      mockEvent.body = JSON.stringify(deletePayload);
+      const body = JSON.stringify(deletePayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1687,7 +1834,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "status";
-      mockEvent.body = JSON.stringify(statusPayload);
+      const body = JSON.stringify(statusPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1749,7 +1899,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "discussion";
-      mockEvent.body = JSON.stringify(discussionPayload);
+      const body = JSON.stringify(discussionPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
       expect(mockCallback).toHaveBeenCalledWith(null, {
@@ -1826,7 +1979,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "discussion_comment";
-      mockEvent.body = JSON.stringify(discussionCommentPayload);
+      const body = JSON.stringify(discussionCommentPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1938,7 +2094,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "package";
-      mockEvent.body = JSON.stringify(packagePayload);
+      const body = JSON.stringify(packagePayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -1986,7 +2145,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "gollum";
-      mockEvent.body = JSON.stringify(gollumPayload);
+      const body = JSON.stringify(gollumPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -2061,7 +2223,10 @@ describe("webhookHandler", () => {
       (validateWebhookPayload as jest.Mock).mockReturnValue(true);
 
       mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
-      mockEvent.body = JSON.stringify(auditLogPayload);
+      const body = JSON.stringify(auditLogPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -2093,7 +2258,10 @@ describe("webhookHandler", () => {
       (validateWebhookPayload as jest.Mock).mockReturnValue(false);
 
       mockEvent.headers["X-GitHub-Event"] = "audit_log_streaming";
-      mockEvent.body = JSON.stringify(invalidPayload);
+      const body = JSON.stringify(invalidPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -2113,7 +2281,10 @@ describe("webhookHandler", () => {
       };
 
       mockEvent.headers["X-GitHub-Event"] = "unsupported_event";
-      mockEvent.body = JSON.stringify(unsupportedPayload);
+      const body = JSON.stringify(unsupportedPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -2161,7 +2332,10 @@ describe("webhookHandler", () => {
   describe("Error handling", () => {
     it("should handle JSON parsing errors", async () => {
       mockEvent.headers["X-GitHub-Event"] = "ping";
-      mockEvent.body = "invalid json";
+      const body = "invalid json";
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 
@@ -2177,8 +2351,10 @@ describe("webhookHandler", () => {
         hook_id: 123456,
       };
 
-      mockEvent.body = JSON.stringify(pingPayload);
-      // Don't set X-GitHub-Event header
+      const body = JSON.stringify(pingPayload);
+      const signature = generateWebhookSignature(body, testSecret);
+      mockEvent.headers["X-Hub-Signature-256"] = signature;
+      mockEvent.body = body;
 
       await webhookHandler(mockEvent, mockContext, mockCallback);
 

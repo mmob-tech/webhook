@@ -1,4 +1,5 @@
 import { APIGatewayEvent, Callback, Context } from "aws-lambda";
+import * as crypto from "crypto";
 import {
   AuditLogEvent,
   GitHubAuditLogWebhookPayload,
@@ -41,6 +42,47 @@ export const webhookHandler = async (
   callback: Callback
 ) => {
   try {
+    // Get webhook secret from environment variable
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error("GITHUB_WEBHOOK_SECRET environment variable is not set");
+      return callback(null, {
+        statusCode: 500,
+        body: JSON.stringify({ message: "Webhook secret not configured" }),
+      });
+    }
+
+    // Validate webhook signature
+    const signature =
+      event.headers["X-Hub-Signature-256"] ||
+      event.headers["x-hub-signature-256"];
+
+    if (!signature) {
+      console.error("Missing X-Hub-Signature-256 header");
+      return callback(null, {
+        statusCode: 401,
+        body: JSON.stringify({ message: "Missing signature header" }),
+      });
+    }
+
+    // Verify the signature
+    const isValid = verifyGitHubSignature(
+      event.body || "",
+      signature,
+      webhookSecret
+    );
+
+    if (!isValid) {
+      console.error("Invalid webhook signature");
+      return callback(null, {
+        statusCode: 401,
+        body: JSON.stringify({ message: "Invalid signature" }),
+      });
+    }
+
+    console.log("Webhook signature validated successfully");
+
     // Get the GitHub event type from headers
     const githubEvent =
       event.headers["X-GitHub-Event"] || event.headers["x-github-event"];
@@ -1325,5 +1367,29 @@ const processAuditLogEvent = async (
       break;
     default:
       console.log(`Unhandled audit event: ${event.action}`);
+  }
+};
+
+//helper function for signature verification
+const verifyGitHubSignature = (
+  payload: string,
+  signature: string,
+  secret: string
+): boolean => {
+  try {
+    // GitHub sends signature as "sha256=<hash>"
+    const expectedSignature = `sha256=${crypto
+      .createHmac("sha256", secret)
+      .update(payload, "utf8")
+      .digest("hex")}`;
+
+    // Use timingSafeEqual to prevent timing attacks
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch (error) {
+    console.error("Error verifying signature:", error);
+    return false;
   }
 };

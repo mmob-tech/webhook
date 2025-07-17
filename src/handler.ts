@@ -33,6 +33,7 @@ import {
   GitHubWorkflowRunPayload,
   WebhookPayload,
 } from "./types/webhook";
+import { generateHealthCheckData } from "./utils/health";
 import { verifyGitHubSignature } from "./utils/signature";
 import { validateWebhookPayload } from "./utils/validator";
 export const healthCheck = async (
@@ -42,17 +43,7 @@ export const healthCheck = async (
 ) => {
   try {
     // Basic health check information
-    const healthData = {
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      service: "github-webhook-handler",
-      version: process.env.SERVICE_VERSION || "1.0.0",
-      environment: process.env.NODE_ENV || "production",
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      // Check if webhook secret is configured
-      secretConfigured: !!process.env.GITHUB_WEBHOOK_SECRET,
-    };
+    const healthData = generateHealthCheckData(context);
 
     return callback(null, {
       statusCode: 200,

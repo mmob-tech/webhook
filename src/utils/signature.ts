@@ -1,33 +1,24 @@
 import * as crypto from "crypto";
 
-export const verifyGitHubWebhookSignature = (
+export const verifyGitHubSignature = (
   payload: string,
   signature: string,
   secret: string
 ): boolean => {
-  if (!payload || !signature || !secret) {
-    return false;
-  }
-
   try {
-    // Remove 'sha256=' prefix if present
-    const cleanSignature = signature.startsWith("sha256=")
-      ? signature.substring(7)
-      : signature;
-
-    // Create expected signature
-    const expectedSignature = crypto
+    // GitHub sends signature as "sha256=<hash>"
+    const expectedSignature = `sha256=${crypto
       .createHmac("sha256", secret)
       .update(payload, "utf8")
-      .digest("hex");
+      .digest("hex")}`;
 
-    // Use timing-safe comparison
+    // Use timingSafeEqual to prevent timing attacks
     return crypto.timingSafeEqual(
-      Buffer.from(cleanSignature, "hex"),
-      Buffer.from(expectedSignature, "hex")
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
     );
   } catch (error) {
-    console.error("Error verifying GitHub webhook signature:", error);
+    console.error("Error verifying signature:", error);
     return false;
   }
 };

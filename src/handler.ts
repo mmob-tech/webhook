@@ -1,5 +1,4 @@
 import { APIGatewayEvent, Callback, Context } from "aws-lambda";
-import * as crypto from "crypto";
 import {
   AuditLogEvent,
   GitHubAuditLogWebhookPayload,
@@ -34,6 +33,7 @@ import {
   GitHubWorkflowRunPayload,
   WebhookPayload,
 } from "./types/webhook";
+import { verifyGitHubSignature } from "./utils/signature";
 import { validateWebhookPayload } from "./utils/validator";
 export const healthCheck = async (
   event: APIGatewayEvent,
@@ -1408,29 +1408,5 @@ const processAuditLogEvent = async (
       break;
     default:
       console.log(`Unhandled audit event: ${event.action}`);
-  }
-};
-
-//helper function for signature verification
-const verifyGitHubSignature = (
-  payload: string,
-  signature: string,
-  secret: string
-): boolean => {
-  try {
-    // GitHub sends signature as "sha256=<hash>"
-    const expectedSignature = `sha256=${crypto
-      .createHmac("sha256", secret)
-      .update(payload, "utf8")
-      .digest("hex")}`;
-
-    // Use timingSafeEqual to prevent timing attacks
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
-  } catch (error) {
-    console.error("Error verifying signature:", error);
-    return false;
   }
 };

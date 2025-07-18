@@ -12,12 +12,13 @@ webhook
 │   ├── types
 │   │   └── github.ts       # TypeScript interfaces for GitHub webhook events
 │   └── utils
+│       ├── health.ts       # Health check fun tion for the webhook
 │       ├── validator.ts    # Utility functions for validating webhook data
 │       └── signature.ts    # Webhook signature verification utilities
 ├── package.json            # npm configuration file
 ├── tsconfig.json           # TypeScript configuration file
 ├── serverless.yml          # Serverless Framework configuration file
-├── .env            # Environment variable template
+├── .env.example            # Environment variable template
 └── README.md               # Project documentation
 ```
 

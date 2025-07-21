@@ -3,40 +3,50 @@ import { Context } from "aws-lambda";
 export interface HealthCheckData {
   status: "healthy" | "unhealthy";
   timestamp: string;
-  service: string;
-  version: string;
-  environment: string;
-  uptime: number;
-  memory: NodeJS.MemoryUsage;
-  secretConfigured: boolean;
-  context?: {
-    functionName: string;
-    functionVersion: string;
-    memoryLimit: string;
-    remainingTime: number;
+  version?: string;
+  environment?: string;
+  uptime?: number;
+  memory?: {
+    used: number;
+    total: number;
+    percentage: number;
+  };
+  lambda?: {
+    function_name: string;
+    function_version: string;
+    remaining_time: number;
+    request_id: string;
+  };
+  configuration?: {
+    webhook_secret_configured: boolean;
+    supported_events: number;
   };
 }
 
-export const generateHealthCheckData = (context?: Context): HealthCheckData => {
-  const healthData: HealthCheckData = {
+export const generateHealthCheckData = (context: Context): HealthCheckData => {
+  const memoryUsage = process.memoryUsage();
+  const memoryLimit = parseInt(context.memoryLimitInMB) * 1024 * 1024;
+
+  return {
     status: "healthy",
     timestamp: new Date().toISOString(),
-    service: "github-webhook-handler",
-    version: process.env.SERVICE_VERSION || "1.0.0",
-    environment: process.env.NODE_ENV || "production",
+    version: process.env.APP_VERSION || "unknown",
+    environment: process.env.NODE_ENV || "unknown",
     uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    secretConfigured: !!process.env.GITHUB_WEBHOOK_SECRET,
+    memory: {
+      used: memoryUsage.heapUsed,
+      total: memoryLimit,
+      percentage: Math.round((memoryUsage.heapUsed / memoryLimit) * 100),
+    },
+    lambda: {
+      function_name: context.functionName,
+      function_version: context.functionVersion,
+      remaining_time: context.getRemainingTimeInMillis(),
+      request_id: context.awsRequestId,
+    },
+    configuration: {
+      webhook_secret_configured: !!process.env.GITHUB_WEBHOOK_SECRET,
+      supported_events: 30,
+    },
   };
-
-  if (context) {
-    healthData.context = {
-      functionName: context.functionName,
-      functionVersion: context.functionVersion,
-      memoryLimit: context.memoryLimitInMB,
-      remainingTime: context.getRemainingTimeInMillis(),
-    };
-  }
-
-  return healthData;
 };

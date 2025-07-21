@@ -1,4 +1,4 @@
-import * as crypto from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 export const verifyGitHubSignature = (
   payload: string,
@@ -6,29 +6,35 @@ export const verifyGitHubSignature = (
   secret: string
 ): boolean => {
   try {
-    // GitHub sends signature as "sha256=<hash>"
-    const expectedSignature = `sha256=${crypto
-      .createHmac("sha256", secret)
-      .update(payload, "utf8")
-      .digest("hex")}`;
+    if (!signature.startsWith("sha256=")) {
+      console.error("Invalid signature format - must start with 'sha256='");
+      return false;
+    }
 
-    // Use timingSafeEqual to prevent timing attacks
-    return crypto.timingSafeEqual(
-      Buffer.from(signature),
-      Buffer.from(expectedSignature)
-    );
+    const githubSignature = signature.slice(7);
+    const hmac = createHmac("sha256", secret);
+    hmac.update(payload, "utf8");
+    const expectedSignature = hmac.digest("hex");
+
+    if (githubSignature.length !== expectedSignature.length) {
+      return false;
+    }
+
+    const githubBuffer = Buffer.from(githubSignature, "hex");
+    const expectedBuffer = Buffer.from(expectedSignature, "hex");
+
+    return timingSafeEqual(githubBuffer, expectedBuffer);
   } catch (error) {
-    console.error("Error verifying signature:", error);
+    console.error("Error verifying GitHub signature:", error);
     return false;
   }
 };
 
-export const generateWebhookSignature = (
+export const generateGitHubSignature = (
   payload: string,
   secret: string
 ): string => {
-  return `sha256=${crypto
-    .createHmac("sha256", secret)
-    .update(payload, "utf8")
-    .digest("hex")}`;
+  const hmac = createHmac("sha256", secret);
+  hmac.update(payload, "utf8");
+  return `sha256=${hmac.digest("hex")}`;
 };

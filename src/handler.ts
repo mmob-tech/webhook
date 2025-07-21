@@ -1,5 +1,15 @@
 import { APIGatewayEvent, Callback, Context } from "aws-lambda";
 import {
+  processMemberEvent,
+  processOrganizationEvent,
+  processTeamEvent,
+} from "./processors/admin-content";
+import {
+  processPushEvent,
+  processRepositoryEvent,
+} from "./processors/repository";
+// Remove all inline processing functions from handler.ts
+import {
   AuditLogEvent,
   GitHubAuditLogWebhookPayload,
   GitHubCheckRunPayload,
@@ -35,7 +45,8 @@ import {
 } from "./types/webhook";
 import { generateHealthCheckData } from "./utils/health";
 import { verifyGitHubSignature } from "./utils/signature";
-import { validateWebhookPayload } from "./utils/validator";
+import { validateWebhookPayload } from "./utils/webhook-validator";
+
 export const healthCheck = async (
   event: APIGatewayEvent,
   context: Context,
@@ -769,49 +780,6 @@ export const webhookHandler = async (
   }
 };
 
-// Event processing functions
-const processRepositoryEvent = async (
-  payload: GitHubRepositoryPayload
-): Promise<void> => {
-  console.log(`Processing repository event: ${payload.action}`);
-
-  switch (payload.action) {
-    case "created":
-      console.log(`New repository created: ${payload.repository.full_name}`);
-      // Currently only capture the repository creation event full name
-      break;
-    case "deleted":
-      console.log(`Repository deleted: ${payload.repository.full_name}`);
-      // Currently only capture the repository deletion event full name
-      break;
-    case "archived":
-      console.log(`Repository archived: ${payload.repository.full_name}`);
-      // Currently only capture the repository archival event full name
-      break;
-    case "privatized":
-      console.log(`Repository made private: ${payload.repository.full_name}`);
-      // Currently only capture the repository privatization event full name
-      break;
-    case "publicized":
-      console.log(`Repository made public: ${payload.repository.full_name}`);
-      // Currently only capture the repository publicization event full name
-      break;
-    default:
-      console.log(`Unhandled repository action: ${payload.action}`);
-  }
-};
-
-const processPushEvent = async (payload: GitHubPushPayload): Promise<void> => {
-  console.log(`Processing push event to ${payload.repository.full_name}`);
-
-  // Process each commit
-  for (const commit of payload.commits) {
-    console.log(`Commit ${commit.id.substring(0, 7)}: ${commit.message}`);
-    console.log(`Author: ${commit.author.name} <${commit.author.email}>`);
-  }
-  // Add push event processing logic here if any
-};
-
 const processPullRequestEvent = async (
   payload: GitHubPullRequestPayload
 ): Promise<void> => {
@@ -857,55 +825,6 @@ const processIssuesEvent = async (
       break;
     default:
       console.log(`Unhandled issue action: ${payload.action}`);
-  }
-};
-
-const processOrganizationEvent = async (
-  payload: GitHubOrganizationPayload
-): Promise<void> => {
-  console.log(`Processing organization event: ${payload.action}`);
-
-  switch (payload.action) {
-    case "member_added":
-      console.log(
-        `Member added to organization: ${payload.organization.login}`
-      );
-      if (payload.membership?.user) {
-        console.log(`User: ${payload.membership.user.login}`);
-        console.log(`Role: ${payload.membership.role}`);
-      }
-      break;
-    case "member_removed":
-      console.log(
-        `Member removed from organization: ${payload.organization.login}`
-      );
-      if (payload.membership?.user) {
-        console.log(`User: ${payload.membership.user.login}`);
-      }
-      break;
-    default:
-      console.log(`Unhandled organization action: ${payload.action}`);
-  }
-};
-
-const processTeamEvent = async (payload: GitHubTeamPayload): Promise<void> => {
-  console.log(`Processing team event: ${payload.action}`);
-
-  switch (payload.action) {
-    case "created":
-      console.log(`New team created: ${payload.team.name}`);
-      break;
-    case "deleted":
-      console.log(`Team deleted: ${payload.team.name}`);
-      break;
-    case "added_to_repository":
-      console.log(`Team added to repository: ${payload.team.name}`);
-      if (payload.repository) {
-        console.log(`Repository: ${payload.repository.full_name}`);
-      }
-      break;
-    default:
-      console.log(`Unhandled team action: ${payload.action}`);
   }
 };
 
@@ -1057,33 +976,6 @@ const processForkEvent = async (payload: GitHubForkPayload): Promise<void> => {
   console.log(`By: ${payload.sender.login}`);
   console.log(`Total forks: ${payload.repository.forks_count}`);
   // Add your fork logic here
-};
-
-const processMemberEvent = async (
-  payload: GitHubMemberPayload
-): Promise<void> => {
-  console.log(`Processing member event: ${payload.action}`);
-
-  switch (payload.action) {
-    case "added":
-      console.log(`Member added: ${payload.member.login}`);
-      console.log(`To repository: ${payload.repository.full_name}`);
-      break;
-    case "removed":
-      console.log(`Member removed: ${payload.member.login}`);
-      console.log(`From repository: ${payload.repository.full_name}`);
-      break;
-    case "edited":
-      console.log(`Member edited: ${payload.member.login}`);
-      if (payload.changes?.permission) {
-        console.log(
-          `Permission changed from ${payload.changes.permission.from} to ${payload.changes.permission.to}`
-        );
-      }
-      break;
-    default:
-      console.log(`Unhandled member action: ${payload.action}`);
-  }
 };
 
 const processDeploymentEvent = async (

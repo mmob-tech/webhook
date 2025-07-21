@@ -1,91 +1,99 @@
-export interface AuditLogEvent {
-  action: string;
-  actor: {
-    login: string;
-    id: number;
-  };
+// =============================================================================
+// GITHUB WEBHOOK TYPE DEFINITIONS
+// =============================================================================
+
+// Base interfaces
+export interface GitHubUser {
+  login: string;
+  id: number;
+  node_id: string;
+  avatar_url: string;
+  gravatar_id: string;
+  url: string;
+  html_url: string;
+  followers_url: string;
+  following_url: string;
+  gists_url: string;
+  starred_url: string;
+  subscriptions_url: string;
+  organizations_url: string;
+  repos_url: string;
+  events_url: string;
+  received_events_url: string;
+  type: "User" | "Bot" | "Organization";
+  site_admin: boolean;
+  name?: string;
+  email?: string;
+}
+
+export interface GitHubRepository {
+  id: number;
+  node_id: string;
+  name: string;
+  full_name: string;
+  owner: GitHubUser;
+  private: boolean;
+  html_url: string;
+  description: string | null;
+  fork: boolean;
+  url: string;
   created_at: string;
-  resource: string;
-  resource_id: number;
-  resource_type: string;
-  // Additional fields that GitHub audit log events may include
-  organization?: {
-    login: string;
-    id: number;
-  };
-  repository?: {
-    name: string;
-    id: number;
-    full_name: string;
-  };
-  data?: {
-    [key: string]: any;
-  };
+  updated_at: string;
+  pushed_at: string;
+  clone_url: string;
+  size: number;
+  stargazers_count: number;
+  watchers_count: number;
+  language: string | null;
+  has_issues: boolean;
+  has_projects: boolean;
+  has_wiki: boolean;
+  has_pages: boolean;
+  forks_count: number;
+  open_issues_count: number;
+  forks: number;
+  open_issues: number;
+  watchers: number;
+  default_branch: string;
 }
 
-export interface GitHubAuditLogWebhookPayload {
-  action: "audit_log_streaming";
-  audit_log_events: AuditLogEvent[];
-  organization: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-  installation?: {
-    id: number;
-  };
+export interface GitHubOrganization {
+  login: string;
+  id: number;
+  node_id: string;
+  url: string;
+  repos_url: string;
+  events_url: string;
+  hooks_url: string;
+  issues_url: string;
+  members_url: string;
+  public_members_url: string;
+  avatar_url: string;
+  description: string | null;
 }
 
-// GitHub ping event payload
+export interface GitHubLabel {
+  id: number;
+  node_id: string;
+  url: string;
+  name: string;
+  color: string;
+  default: boolean;
+  description: string | null;
+}
+
+// =============================================================================
+// WEBHOOK PAYLOAD INTERFACES
+// =============================================================================
+
 export interface GitHubPingPayload {
   zen: string;
   hook_id: number;
-  hook: {
-    type: string;
-    id: number;
-    name: string;
-    active: boolean;
-    events: string[];
-    config: {
-      content_type: string;
-      insecure_ssl: string;
-      url: string;
-    };
-    updated_at: string;
-    created_at: string;
-    url: string;
-    test_url: string;
-    ping_url: string;
-    deliveries_url: string;
-    last_response: {
-      code: number;
-      status: string;
-      message: string;
-    };
-  };
-  repository?: {
-    id: number;
-    name: string;
-    full_name: string;
-    owner: {
-      login: string;
-      id: number;
-    };
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  hook: any;
+  repository?: GitHubRepository;
+  sender: GitHubUser;
 }
 
-// Repository events
 export interface GitHubRepositoryPayload {
   action:
     | "created"
@@ -97,32 +105,12 @@ export interface GitHubRepositoryPayload {
     | "transferred"
     | "publicized"
     | "privatized";
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-    private: boolean;
-    owner: {
-      login: string;
-      id: number;
-    };
-    description?: string;
-    homepage?: string;
-    language?: string;
-    created_at: string;
-    updated_at: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  changes?: any;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Push events
 export interface GitHubPushPayload {
   ref: string;
   before: string;
@@ -130,45 +118,33 @@ export interface GitHubPushPayload {
   created: boolean;
   deleted: boolean;
   forced: boolean;
+  base_ref: string | null;
+  compare: string;
   commits: Array<{
     id: string;
+    tree_id: string;
+    distinct: boolean;
     message: string;
-    author: {
-      name: string;
-      email: string;
-    };
-    committer: {
-      name: string;
-      email: string;
-    };
-    url: string;
     timestamp: string;
+    url: string;
+    author: { name: string; email: string; username?: string };
+    committer: { name: string; email: string; username?: string };
+    added: string[];
+    removed: string[];
+    modified: string[];
   }>;
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-    owner: {
-      login: string;
-      id: number;
-    };
-  };
-  pusher: {
-    name: string;
-    email: string;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  head_commit: any;
+  repository: GitHubRepository;
+  pusher: { name: string; email: string };
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Pull Request events
 export interface GitHubPullRequestPayload {
   action:
     | "opened"
-    | "closed"
     | "edited"
+    | "closed"
     | "reopened"
     | "assigned"
     | "unassigned"
@@ -176,256 +152,234 @@ export interface GitHubPullRequestPayload {
     | "review_request_removed"
     | "labeled"
     | "unlabeled"
-    | "synchronize";
+    | "synchronize"
+    | "ready_for_review"
+    | "converted_to_draft";
   number: number;
   pull_request: {
+    url: string;
     id: number;
+    node_id: string;
+    html_url: string;
     number: number;
-    title: string;
-    body: string;
     state: "open" | "closed";
-    merged: boolean;
-    merged_at?: string;
-    head: {
-      ref: string;
-      sha: string;
-      repo: {
-        id: number;
-        name: string;
-        full_name: string;
-      };
-    };
-    base: {
-      ref: string;
-      sha: string;
-      repo: {
-        id: number;
-        name: string;
-        full_name: string;
-      };
-    };
-    user: {
-      login: string;
-      id: number;
-    };
+    locked: boolean;
+    title: string;
+    user: GitHubUser;
+    body: string | null;
     created_at: string;
     updated_at: string;
+    closed_at: string | null;
+    merged_at: string | null;
+    merge_commit_sha: string | null;
+    assignee: GitHubUser | null;
+    assignees: GitHubUser[];
+    requested_reviewers: GitHubUser[];
+    labels: GitHubLabel[];
+    milestone: any;
+    draft: boolean;
+    commits_url: string;
+    review_comments_url: string;
+    comments_url: string;
+    statuses_url: string;
+    head: {
+      label: string;
+      ref: string;
+      sha: string;
+      user: GitHubUser;
+      repo: GitHubRepository | null;
+    };
+    base: {
+      label: string;
+      ref: string;
+      sha: string;
+      user: GitHubUser;
+      repo: GitHubRepository;
+    };
+    author_association: string;
+    auto_merge: any;
+    merged: boolean;
+    mergeable: boolean | null;
+    merged_by: GitHubUser | null;
+    comments: number;
+    review_comments: number;
+    commits: number;
+    additions: number;
+    deletions: number;
+    changed_files: number;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+  assignee?: GitHubUser;
+  label?: GitHubLabel;
 }
 
-// Issues events
 export interface GitHubIssuesPayload {
   action:
     | "opened"
-    | "closed"
     | "edited"
+    | "deleted"
+    | "closed"
     | "reopened"
     | "assigned"
     | "unassigned"
     | "labeled"
-    | "unlabeled";
+    | "unlabeled"
+    | "locked"
+    | "unlocked";
   issue: {
+    url: string;
+    repository_url: string;
+    labels_url: string;
+    comments_url: string;
+    events_url: string;
+    html_url: string;
     id: number;
+    node_id: string;
     number: number;
     title: string;
-    body: string;
+    user: GitHubUser;
+    labels: GitHubLabel[];
     state: "open" | "closed";
-    user: {
-      login: string;
-      id: number;
-    };
-    assignee?: {
-      login: string;
-      id: number;
-    };
-    labels: Array<{
-      id: number;
-      name: string;
-      color: string;
-    }>;
+    locked: boolean;
+    assignee: GitHubUser | null;
+    assignees: GitHubUser[];
+    milestone: any;
+    comments: number;
     created_at: string;
     updated_at: string;
+    closed_at: string | null;
+    author_association: string;
+    body: string | null;
+    state_reason?: string | null;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+  assignee?: GitHubUser;
+  label?: GitHubLabel;
 }
 
-// Organization events
-export interface GitHubOrganizationPayload {
-  action:
-    | "deleted"
-    | "renamed"
-    | "member_added"
-    | "member_removed"
-    | "member_invited";
-  organization: {
-    login: string;
+export interface GitHubIssueCommentPayload {
+  action: "created" | "edited" | "deleted";
+  issue: GitHubIssuesPayload["issue"];
+  comment: {
+    url: string;
+    html_url: string;
+    issue_url: string;
     id: number;
-    description?: string;
-    name?: string;
-    company?: string;
-    blog?: string;
-    location?: string;
-    email?: string;
-    public_repos: number;
-    followers: number;
-    following: number;
+    node_id: string;
+    user: GitHubUser;
     created_at: string;
     updated_at: string;
+    author_association: string;
+    body: string;
+    reactions: any;
   };
-  membership?: {
-    user: {
-      login: string;
-      id: number;
-    };
-    role: "admin" | "member";
-    state: "active" | "pending";
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Team events
-export interface GitHubTeamPayload {
-  action:
-    | "created"
-    | "deleted"
-    | "edited"
-    | "added_to_repository"
-    | "removed_from_repository";
-  team: {
+export interface GitHubPullRequestReviewPayload {
+  action: "submitted" | "edited" | "dismissed";
+  review: {
     id: number;
-    name: string;
-    slug: string;
-    description: string;
-    privacy: "closed" | "secret";
-    permission: "pull" | "push" | "admin";
+    node_id: string;
+    user: GitHubUser;
+    body: string | null;
+    commit_id: string;
+    submitted_at: string;
+    state: "approved" | "changes_requested" | "commented" | "dismissed";
+    html_url: string;
+    pull_request_url: string;
+    author_association: string;
+  };
+  pull_request: GitHubPullRequestPayload["pull_request"];
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+  changes?: any;
+}
+
+export interface GitHubPullRequestReviewCommentPayload {
+  action: "created" | "edited" | "deleted";
+  comment: {
+    url: string;
+    pull_request_review_id: number;
+    id: number;
+    node_id: string;
+    diff_hunk: string;
+    path: string;
+    position: number | null;
+    original_position: number;
+    commit_id: string;
+    original_commit_id: string;
+    user: GitHubUser;
+    body: string;
     created_at: string;
     updated_at: string;
+    html_url: string;
+    pull_request_url: string;
+    author_association: string;
+    reactions: any;
+    line: number | null;
+    original_line: number;
+    side: "RIGHT" | "LEFT";
   };
-  changes?: {
-    name?: {
-      from: string;
-    };
-    description?: {
-      from: string;
-    };
-    privacy?: {
-      from: string;
-    };
-    permission?: {
-      from: string;
-    };
-  };
-  repository?: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  pull_request: GitHubPullRequestPayload["pull_request"];
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+  changes?: any;
 }
 
-// Workflow Run events
+// Workflow payloads
 export interface GitHubWorkflowRunPayload {
-  action: "completed" | "requested" | "in_progress" | "cancelled";
+  action: "completed" | "requested" | "in_progress";
   workflow_run: {
     id: number;
     name: string;
     node_id: string;
     head_branch: string;
     head_sha: string;
-    path: string;
     run_number: number;
     event: string;
-    display_title: string;
-    status: "queued" | "in_progress" | "completed" | "cancelled";
+    status: "queued" | "in_progress" | "completed";
     conclusion:
       | "success"
       | "failure"
       | "neutral"
       | "cancelled"
-      | "skipped"
       | "timed_out"
       | "action_required"
+      | "stale"
+      | "skipped"
       | null;
     workflow_id: number;
-    check_suite_id: number;
-    check_suite_node_id: string;
     url: string;
     html_url: string;
+    pull_requests: any[];
     created_at: string;
     updated_at: string;
-    actor: {
-      login: string;
-      id: number;
-      avatar_url: string;
-      url: string;
-    };
+    actor: GitHubUser;
     run_attempt: number;
     run_started_at: string;
-    triggering_actor: {
-      login: string;
-      id: number;
-      avatar_url: string;
-      url: string;
-    };
+    triggering_actor: GitHubUser;
     jobs_url: string;
     logs_url: string;
     check_suite_url: string;
     artifacts_url: string;
     cancel_url: string;
     rerun_url: string;
-    previous_attempt_url: string | null;
     workflow_url: string;
-    head_commit: {
-      id: string;
-      tree_id: string;
-      message: string;
-      timestamp: string;
-      author: {
-        name: string;
-        email: string;
-      };
-      committer: {
-        name: string;
-        email: string;
-      };
-    };
-    repository: {
-      id: number;
-      name: string;
-      full_name: string;
-    };
-    head_repository: {
-      id: number;
-      name: string;
-      full_name: string;
-    };
+    head_commit: any;
+    repository: GitHubRepository;
+    head_repository: GitHubRepository | null;
   };
   workflow: {
     id: number;
@@ -439,24 +393,13 @@ export interface GitHubWorkflowRunPayload {
     html_url: string;
     badge_url: string;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Workflow Job events
 export interface GitHubWorkflowJobPayload {
-  action: "queued" | "in_progress" | "completed" | "cancelled";
+  action: "queued" | "in_progress" | "completed";
   workflow_job: {
     id: number;
     run_id: number;
@@ -468,60 +411,32 @@ export interface GitHubWorkflowJobPayload {
     head_sha: string;
     url: string;
     html_url: string;
-    status: "queued" | "in_progress" | "completed" | "cancelled";
-    conclusion:
-      | "success"
-      | "failure"
-      | "neutral"
-      | "cancelled"
-      | "skipped"
-      | "timed_out"
-      | "action_required"
-      | null;
+    status: "queued" | "in_progress" | "completed";
+    conclusion: "success" | "failure" | "cancelled" | "skipped" | null;
+    created_at: string;
     started_at: string;
     completed_at: string | null;
     name: string;
     steps: Array<{
       name: string;
       status: "queued" | "in_progress" | "completed";
-      conclusion:
-        | "success"
-        | "failure"
-        | "neutral"
-        | "cancelled"
-        | "skipped"
-        | "timed_out"
-        | "action_required"
-        | null;
+      conclusion: "success" | "failure" | "cancelled" | "skipped" | null;
       number: number;
-      started_at: string;
-      completed_at: string | null;
+      started_at?: string;
+      completed_at?: string;
     }>;
     check_run_url: string;
     labels: string[];
-    runner_id: number;
-    runner_name: string;
-    runner_group_id: number;
-    runner_group_name: string;
-    created_at: string;
-    updated_at: string;
+    runner_id: number | null;
+    runner_name: string | null;
+    runner_group_id: number | null;
+    runner_group_name: string | null;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Check Suite events
 export interface GitHubCheckSuitePayload {
   action: "completed" | "requested" | "rerequested";
   check_suite: {
@@ -535,90 +450,32 @@ export interface GitHubCheckSuitePayload {
       | "failure"
       | "neutral"
       | "cancelled"
-      | "skipped"
       | "timed_out"
       | "action_required"
+      | "stale"
+      | "skipped"
       | null;
     url: string;
     before: string;
     after: string;
-    pull_requests: Array<{
-      url: string;
-      id: number;
-      number: number;
-      head: {
-        ref: string;
-        sha: string;
-        repo: {
-          id: number;
-          url: string;
-          name: string;
-        };
-      };
-      base: {
-        ref: string;
-        sha: string;
-        repo: {
-          id: number;
-          url: string;
-          name: string;
-        };
-      };
-    }>;
-    app: {
-      id: number;
-      slug: string;
-      node_id: string;
-      owner: {
-        login: string;
-        id: number;
-      };
-      name: string;
-      description: string;
-      external_url: string;
-      html_url: string;
-      created_at: string;
-      updated_at: string;
-    };
+    pull_requests: any[];
+    app: any;
     created_at: string;
     updated_at: string;
     latest_check_runs_count: number;
     check_runs_url: string;
-    head_commit: {
-      id: string;
-      tree_id: string;
-      message: string;
-      timestamp: string;
-      author: {
-        name: string;
-        email: string;
-      };
-      committer: {
-        name: string;
-        email: string;
-      };
-    };
+    head_commit: any;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Check Run events
 export interface GitHubCheckRunPayload {
   action: "created" | "completed" | "rerequested" | "requested_action";
   check_run: {
     id: number;
+    name: string;
     node_id: string;
     head_sha: string;
     external_id: string;
@@ -631,92 +488,146 @@ export interface GitHubCheckRunPayload {
       | "failure"
       | "neutral"
       | "cancelled"
-      | "skipped"
       | "timed_out"
       | "action_required"
+      | "stale"
+      | "skipped"
       | null;
     started_at: string;
     completed_at: string | null;
     output: {
-      title: string;
-      summary: string;
-      text: string;
+      title: string | null;
+      summary: string | null;
+      text: string | null;
       annotations_count: number;
       annotations_url: string;
     };
-    name: string;
-    check_suite: {
-      id: number;
-      node_id: string;
-      head_branch: string;
-      head_sha: string;
-      status: "queued" | "in_progress" | "completed";
-      conclusion:
-        | "success"
-        | "failure"
-        | "neutral"
-        | "cancelled"
-        | "skipped"
-        | "timed_out"
-        | "action_required"
-        | null;
-      url: string;
-      before: string;
-      after: string;
-      pull_requests: any[];
-      app: {
-        id: number;
-        slug: string;
-        node_id: string;
-        owner: {
-          login: string;
-          id: number;
-        };
-        name: string;
-        description: string;
-        external_url: string;
-        html_url: string;
-        created_at: string;
-        updated_at: string;
-      };
-      created_at: string;
-      updated_at: string;
-    };
-    app: {
-      id: number;
-      slug: string;
-      node_id: string;
-      owner: {
-        login: string;
-        id: number;
-      };
-      name: string;
-      description: string;
-      external_url: string;
-      html_url: string;
-      created_at: string;
-      updated_at: string;
-    };
+    check_suite: any;
+    app: any;
     pull_requests: any[];
-    created_at: string;
-    updated_at: string;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+  requested_action?: { identifier: string };
 }
 
-// Release events
+export interface GitHubStatusPayload {
+  id: number;
+  sha: string;
+  name: string;
+  target_url: string | null;
+  context: string;
+  description: string | null;
+  state: "success" | "failure" | "error" | "pending";
+  commit: any;
+  branches: Array<{
+    name: string;
+    commit: { sha: string; url: string };
+    protected: boolean;
+  }>;
+  created_at: string;
+  updated_at: string;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+// Social events
+export interface GitHubStarPayload {
+  action: "created" | "deleted";
+  starred_at: string | null;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubWatchPayload {
+  action: "started";
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubForkPayload {
+  forkee: GitHubRepository;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+// Create/Delete events
+export interface GitHubCreatePayload {
+  ref: string;
+  ref_type: "branch" | "tag" | "repository";
+  master_branch: string;
+  description: string | null;
+  pusher_type: "user";
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubDeletePayload {
+  ref: string;
+  ref_type: "branch" | "tag";
+  pusher_type: "user";
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+// Admin events
+export interface GitHubTeamPayload {
+  action:
+    | "created"
+    | "deleted"
+    | "edited"
+    | "added_to_repository"
+    | "removed_from_repository";
+  team: {
+    name: string;
+    id: number;
+    node_id: string;
+    slug: string;
+    description: string | null;
+    privacy: "closed" | "secret";
+    url: string;
+    html_url: string;
+    members_url: string;
+    repositories_url: string;
+    permission: "pull" | "push" | "admin";
+  };
+  changes?: any;
+  repository?: GitHubRepository;
+  organization: GitHubOrganization;
+  sender: GitHubUser;
+}
+
+export interface GitHubOrganizationPayload {
+  action:
+    | "deleted"
+    | "renamed"
+    | "member_added"
+    | "member_removed"
+    | "member_invited";
+  organization: GitHubOrganization;
+  membership?: any;
+  invitation?: any;
+  changes?: any;
+  sender: GitHubUser;
+}
+
+export interface GitHubMemberPayload {
+  action: "added" | "removed" | "edited";
+  member: GitHubUser;
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+// Content events
 export interface GitHubReleasePayload {
   action:
     | "published"
@@ -732,173 +643,165 @@ export interface GitHubReleasePayload {
     upload_url: string;
     html_url: string;
     id: number;
+    author: GitHubUser;
     node_id: string;
     tag_name: string;
     target_commitish: string;
-    name: string;
+    name: string | null;
     draft: boolean;
-    author: {
-      login: string;
-      id: number;
-    };
     prerelease: boolean;
     created_at: string;
-    published_at: string;
-    assets: Array<{
-      url: string;
+    published_at: string | null;
+    assets: any[];
+    tarball_url: string;
+    zipball_url: string;
+    body: string | null;
+  };
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubPackagePayload {
+  action: "published" | "updated";
+  package: {
+    id: number;
+    name: string;
+    namespace: string;
+    description: string | null;
+    ecosystem: string;
+    package_type: string;
+    html_url: string;
+    created_at: string;
+    updated_at: string;
+    owner: GitHubUser;
+    package_version: any;
+    registry: any;
+    visibility: "private" | "public";
+  };
+  repository?: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubDiscussionPayload {
+  action:
+    | "created"
+    | "edited"
+    | "deleted"
+    | "pinned"
+    | "unpinned"
+    | "locked"
+    | "unlocked"
+    | "transferred"
+    | "category_changed"
+    | "answered"
+    | "unanswered"
+    | "labeled"
+    | "unlabeled";
+  discussion: {
+    repository_url: string;
+    category: {
       id: number;
       node_id: string;
       name: string;
-      label: string;
-      uploader: {
-        login: string;
-        id: number;
-      };
-      content_type: string;
-      state: string;
-      size: number;
-      download_count: number;
+      slug: string;
+      description: string;
+      emoji: string;
       created_at: string;
       updated_at: string;
-      browser_download_url: string;
-    }>;
-    tarball_url: string;
-    zipball_url: string;
-    body: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Star events
-export interface GitHubStarPayload {
-  action: "created" | "deleted";
-  starred_at: string;
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-    stargazers_count: number;
-    owner: {
-      login: string;
-      id: number;
+      is_answerable: boolean;
     };
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Watch events
-export interface GitHubWatchPayload {
-  action: "started";
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-    watchers_count: number;
-    owner: {
-      login: string;
-      id: number;
-    };
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Fork events
-export interface GitHubForkPayload {
-  forkee: {
-    id: number;
-    name: string;
-    full_name: string;
-    owner: {
-      login: string;
-      id: number;
-    };
-    private: boolean;
+    answer_html_url: string | null;
+    answer_chosen_at: string | null;
+    answer_chosen_by: GitHubUser | null;
     html_url: string;
-    description: string;
-    fork: boolean;
+    id: number;
+    node_id: string;
+    number: number;
+    title: string;
+    user: GitHubUser;
+    state: "open" | "locked";
+    locked: boolean;
+    comments: number;
     created_at: string;
     updated_at: string;
+    author_association: string;
+    active_lock_reason: string | null;
+    body: string | null;
+    labels?: GitHubLabel[];
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-    forks_count: number;
-    owner: {
-      login: string;
-      id: number;
-    };
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+  label?: GitHubLabel;
+  answer?: any;
 }
 
-// Member events
-export interface GitHubMemberPayload {
-  action: "added" | "removed" | "edited";
-  member: {
-    login: string;
+export interface GitHubDiscussionCommentPayload {
+  action: "created" | "edited" | "deleted";
+  comment: {
     id: number;
-    avatar_url: string;
-    type: string;
-    site_admin: boolean;
+    node_id: string;
+    html_url: string;
+    parent_id: number | null;
+    child_comment_count: number;
+    user: GitHubUser;
+    discussion_id: number;
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+    body: string;
+    reactions: any;
   };
-  changes?: {
-    permission?: {
-      from: string;
-      to: string;
-    };
-  };
-  repository: {
+  discussion: GitHubDiscussionPayload["discussion"];
+  changes?: any;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubGollumPayload {
+  pages?: Array<{
+    page_name: string;
+    title: string;
+    summary: string | null;
+    action: "created" | "edited";
+    sha: string;
+    html_url: string;
+  }>;
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
+}
+
+export interface GitHubCommitCommentPayload {
+  action: "created";
+  comment: {
+    url: string;
+    html_url: string;
     id: number;
-    name: string;
-    full_name: string;
+    node_id: string;
+    user: GitHubUser;
+    position: number | null;
+    line: number | null;
+    path: string | null;
+    commit_id: string;
+    created_at: string;
+    updated_at: string;
+    author_association: string;
+    body: string;
+    reactions: any;
   };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
 // Deployment events
 export interface GitHubDeploymentPayload {
-  action: "created";
   deployment: {
     url: string;
     id: number;
@@ -909,32 +812,20 @@ export interface GitHubDeploymentPayload {
     payload: any;
     original_environment: string;
     environment: string;
-    description: string;
-    creator: {
-      login: string;
-      id: number;
-    };
+    description: string | null;
+    creator: GitHubUser;
     created_at: string;
     updated_at: string;
     statuses_url: string;
     repository_url: string;
+    transient_environment: boolean;
+    production_environment: boolean;
   };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Deployment Status events
 export interface GitHubDeploymentStatusPayload {
   action: "created";
   deployment_status: {
@@ -949,622 +840,112 @@ export interface GitHubDeploymentStatusPayload {
       | "success"
       | "queued"
       | "in_progress";
-    creator: {
-      login: string;
-      id: number;
-    };
-    description: string;
+    creator: GitHubUser;
+    description: string | null;
     environment: string;
-    target_url: string;
+    target_url: string | null;
     created_at: string;
     updated_at: string;
     deployment_url: string;
     repository_url: string;
   };
-  deployment: {
-    url: string;
-    id: number;
-    node_id: string;
-    sha: string;
-    ref: string;
-    task: string;
-    payload: any;
-    environment: string;
-    description: string;
-    creator: {
-      login: string;
-      id: number;
-    };
-    created_at: string;
-    updated_at: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+  deployment: GitHubDeploymentPayload["deployment"];
+  repository: GitHubRepository;
+  sender: GitHubUser;
+  organization?: GitHubOrganization;
 }
 
-// Pull Request Review events
-export interface GitHubPullRequestReviewPayload {
-  action: "submitted" | "edited" | "dismissed";
-  review: {
+// Security events
+export interface AuditLogEvent {
+  "@timestamp": number;
+  action: string;
+  active: boolean;
+  actor: {
     id: number;
-    node_id: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    body: string;
-    commit_id: string;
-    submitted_at: string;
-    state: "approved" | "changes_requested" | "commented" | "dismissed";
-    html_url: string;
-    pull_request_url: string;
-    author_association: string;
-  };
-  pull_request: {
-    id: number;
-    number: number;
-    title: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    state: "open" | "closed";
-    merged: boolean;
-    head: {
-      ref: string;
-      sha: string;
-    };
-    base: {
-      ref: string;
-      sha: string;
-    };
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
     login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+    gravatar_id?: string;
+    type?: string;
+  } | null;
+  actor_location?: { country_code?: string };
+  created_at: number;
+  data?: any;
+  org?: string;
+  permission?: string;
+  repo?: string;
+  user?: string;
+  team?: string;
+  visibility?: string;
 }
 
-// Issue Comment events
-export interface GitHubIssueCommentPayload {
-  action: "created" | "edited" | "deleted";
-  issue: {
-    id: number;
-    number: number;
-    title: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    state: "open" | "closed";
-    body: string;
-    created_at: string;
-    updated_at: string;
-  };
-  comment: {
-    id: number;
-    node_id: string;
-    url: string;
-    html_url: string;
-    body: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    created_at: string;
-    updated_at: string;
-    author_association: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Create events (for branches/tags)
-export interface GitHubCreatePayload {
-  ref: string;
-  ref_type: "branch" | "tag";
-  master_branch: string;
-  description: string;
-  pusher_type: string;
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Delete events (for branches/tags)
-export interface GitHubDeletePayload {
-  ref: string;
-  ref_type: "branch" | "tag";
-  pusher_type: string;
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Pull Request Review Comment events
-export interface GitHubPullRequestReviewCommentPayload {
-  action: "created" | "edited" | "deleted";
-  comment: {
-    id: number;
-    node_id: string;
-    url: string;
-    html_url: string;
-    body: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    created_at: string;
-    updated_at: string;
-    author_association: string;
-    commit_id: string;
-    original_commit_id: string;
-    diff_hunk: string;
-    path: string;
-    position: number;
-    original_position: number;
-    in_reply_to_id?: number;
-    pull_request_review_id: number;
-    pull_request_url: string;
-  };
-  pull_request: {
-    id: number;
-    number: number;
-    title: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    state: "open" | "closed";
-    merged: boolean;
-    head: {
-      ref: string;
-      sha: string;
-    };
-    base: {
-      ref: string;
-      sha: string;
-    };
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Status events (Commit status)
-export interface GitHubStatusPayload {
-  id: number;
-  sha: string;
-  name: string;
-  target_url: string;
-  context: string;
-  description: string;
-  state: "error" | "failure" | "pending" | "success";
-  commit: {
-    sha: string;
-    commit: {
-      author: {
-        name: string;
-        email: string;
-        date: string;
-      };
-      committer: {
-        name: string;
-        email: string;
-        date: string;
-      };
-      message: string;
-    };
-    url: string;
-    html_url: string;
-    comments_url: string;
-    author: {
-      login: string;
-      id: number;
-    };
-    committer: {
-      login: string;
-      id: number;
-    };
-  };
-  branches: Array<{
-    name: string;
-    commit: {
-      sha: string;
-      url: string;
-    };
-    protected: boolean;
-  }>;
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Discussion events (Repository discussions)
-export interface GitHubDiscussionPayload {
-  action:
-    | "created"
-    | "edited"
-    | "deleted"
-    | "pinned"
-    | "unpinned"
-    | "locked"
-    | "unlocked"
-    | "transferred"
-    | "category_changed"
-    | "answered"
-    | "unanswered";
-  discussion: {
-    id: number;
-    node_id: string;
-    url: string;
-    html_url: string;
-    category: {
-      id: number;
-      node_id: string;
-      name: string;
-      emoji: string;
-      description: string;
-      created_at: string;
-      updated_at: string;
-      slug: string;
-      is_answerable: boolean;
-    };
-    answer_html_url?: string;
-    answer_chosen_at?: string;
-    answer_chosen_by?: {
-      login: string;
-      id: number;
-    };
-    number: number;
-    title: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    state: "open" | "locked" | "converting" | "transferring";
-    locked: boolean;
-    comments: number;
-    created_at: string;
-    updated_at: string;
-    author_association: string;
-    active_lock_reason?: string;
-    body: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Discussion Comment events
-export interface GitHubDiscussionCommentPayload {
-  action: "created" | "edited" | "deleted";
-  comment: {
-    id: number;
-    node_id: string;
-    url: string;
-    html_url: string;
-    body: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    created_at: string;
-    updated_at: string;
-    author_association: string;
-    parent_id?: number;
-    child_comment_count: number;
-  };
-  discussion: {
-    id: number;
-    node_id: string;
-    url: string;
-    html_url: string;
-    category: {
-      id: number;
-      node_id: string;
-      name: string;
-      emoji: string;
-      description: string;
-      created_at: string;
-      updated_at: string;
-      slug: string;
-      is_answerable: boolean;
-    };
-    number: number;
-    title: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    state: "open" | "locked";
-    locked: boolean;
-    comments: number;
-    created_at: string;
-    updated_at: string;
-    author_association: string;
-    body: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Package events (GitHub Packages)
-export interface GitHubPackagePayload {
-  action: "published" | "updated";
-  package: {
-    id: number;
-    name: string;
-    namespace: string;
-    description: string;
-    ecosystem: string;
-    package_type: string;
-    html_url: string;
-    created_at: string;
-    updated_at: string;
-    owner: {
-      login: string;
-      id: number;
-    };
-    package_version: {
-      id: number;
-      version: string;
-      summary: string;
-      name: string;
-      description: string;
-      body: string;
-      body_html: string;
-      release: {
-        url: string;
-        html_url: string;
-        id: number;
-        tag_name: string;
-        target_commitish: string;
-        name: string;
-        draft: boolean;
-        prerelease: boolean;
-        created_at: string;
-        published_at: string;
-      };
-      manifest: string;
-      html_url: string;
-      tag_name: string;
-      target_commitish: string;
-      target_oid: string;
-      draft: boolean;
-      prerelease: boolean;
-      created_at: string;
-      updated_at: string;
-      metadata: Array<{
-        package_type: string;
-        container?: {
-          tags: string[];
-        };
-      }>;
-      package_files: Array<{
-        download_url: string;
-        id: number;
-        name: string;
-        sha256: string;
-        sha1: string;
-        md5: string;
-        content_type: string;
-        state: string;
-        size: number;
-        created_at: string;
-        updated_at: string;
-      }>;
-      author: {
-        login: string;
-        id: number;
-      };
-      installation_command: string;
-    };
-    registry: {
-      about_url: string;
-      name: string;
-      type: string;
-      url: string;
-      vendor: string;
-    };
-  };
-  repository?: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Commit Comment events
-export interface GitHubCommitCommentPayload {
-  action: "created";
-  comment: {
-    id: number;
-    node_id: string;
-    url: string;
-    html_url: string;
-    body: string;
-    user: {
-      login: string;
-      id: number;
-    };
-    position?: number;
-    line?: number;
-    path?: string;
-    commit_id: string;
-    created_at: string;
-    updated_at: string;
-    author_association: string;
-  };
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
-}
-
-// Gollum events (Wiki page)
-export interface GitHubGollumPayload {
-  pages: Array<{
-    page_name: string;
-    title: string;
-    summary?: string;
-    action: "created" | "edited";
-    sha: string;
-    html_url: string;
-  }>;
-  repository: {
-    id: number;
-    name: string;
-    full_name: string;
-  };
-  organization?: {
-    login: string;
-    id: number;
-  };
-  sender: {
-    login: string;
-    id: number;
-  };
+export interface GitHubAuditLogWebhookPayload {
+  events: AuditLogEvent[];
+  organization: GitHubOrganization;
 }
 
 // Union type for all webhook payloads
 export type WebhookPayload =
-  | GitHubAuditLogWebhookPayload
   | GitHubPingPayload
   | GitHubRepositoryPayload
   | GitHubPushPayload
   | GitHubPullRequestPayload
   | GitHubIssuesPayload
-  | GitHubOrganizationPayload
-  | GitHubTeamPayload
+  | GitHubIssueCommentPayload
+  | GitHubPullRequestReviewPayload
+  | GitHubPullRequestReviewCommentPayload
   | GitHubWorkflowRunPayload
   | GitHubWorkflowJobPayload
   | GitHubCheckSuitePayload
   | GitHubCheckRunPayload
-  | GitHubReleasePayload
+  | GitHubStatusPayload
   | GitHubStarPayload
   | GitHubWatchPayload
   | GitHubForkPayload
-  | GitHubMemberPayload
-  | GitHubDeploymentPayload
-  | GitHubDeploymentStatusPayload
-  | GitHubPullRequestReviewPayload
-  | GitHubIssueCommentPayload
   | GitHubCreatePayload
   | GitHubDeletePayload
-  | GitHubPullRequestReviewCommentPayload
-  | GitHubStatusPayload
+  | GitHubTeamPayload
+  | GitHubOrganizationPayload
+  | GitHubMemberPayload
+  | GitHubReleasePayload
+  | GitHubPackagePayload
   | GitHubDiscussionPayload
   | GitHubDiscussionCommentPayload
-  | GitHubPackagePayload
+  | GitHubGollumPayload
   | GitHubCommitCommentPayload
-  | GitHubGollumPayload;
+  | GitHubDeploymentPayload
+  | GitHubDeploymentStatusPayload
+  | GitHubAuditLogWebhookPayload;
+
+export const SUPPORTED_GITHUB_EVENTS = [
+  "ping",
+  "repository",
+  "push",
+  "pull_request",
+  "pull_request_review",
+  "pull_request_review_comment",
+  "issues",
+  "issue_comment",
+  "workflow_run",
+  "workflow_job",
+  "check_suite",
+  "check_run",
+  "status",
+  "star",
+  "watch",
+  "fork",
+  "create",
+  "delete",
+  "team",
+  "organization",
+  "member",
+  "release",
+  "package",
+  "discussion",
+  "discussion_comment",
+  "gollum",
+  "commit_comment",
+  "deployment",
+  "deployment_status",
+  "audit_log_streaming",
+] as const;
+
+export type GitHubWebhookEvent = (typeof SUPPORTED_GITHUB_EVENTS)[number];

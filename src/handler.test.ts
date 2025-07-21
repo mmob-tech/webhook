@@ -1,7 +1,7 @@
 import { APIGatewayEvent, Callback, Context } from "aws-lambda";
 import { webhookHandler } from "./handler";
 import { generateWebhookSignature } from "./utils/signature";
-import { validateWebhookPayload } from "./utils/validator";
+import { validateWebhookPayload } from "./utils/webhook-validator";
 
 // Mock the validator
 jest.mock("./utils/validator", () => ({

@@ -1,4 +1,6 @@
 import { APIGatewayEvent, Callback, Context } from "aws-lambda";
+import { logWebhookEvent } from "./utils/logging";
+
 import {
   AuditLogEvent,
   GitHubAuditLogWebhookPayload,
@@ -122,6 +124,8 @@ export const webhookHandler = async (
     const payload: WebhookPayload = JSON.parse(event.body || "{}");
 
     console.log(`Received GitHub webhook event: ${githubEvent}`);
+    // Log all webhook events
+    await logWebhookEvent(githubEvent as string, payload, event);
 
     // Handle ping event
     if (githubEvent === "ping") {

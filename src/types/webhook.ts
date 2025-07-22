@@ -1706,6 +1706,30 @@ export interface GitHubMilestonePayload {
   sender: GitHubUser;
 }
 
+// Label Events
+export interface GitHubLabelPayload {
+  action: "created" | "edited" | "deleted";
+  label: GitHubLabel & {
+    url: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  changes?: {
+    name?: {
+      from: string;
+    };
+    color?: {
+      from: string;
+    };
+    description?: {
+      from: string | null;
+    };
+  };
+  repository: GitHubRepository;
+  organization?: GitHubOrganization;
+  sender: GitHubUser;
+}
+
 // Dependabot Alert Events
 export interface GitHubDependabotAlertPayload {
   action: "created" | "dismissed" | "fixed" | "reintroduced" | "reopened";
@@ -1830,7 +1854,8 @@ export type WebhookPayload =
   | GitHubStatusPayload
   | GitHubMilestonePayload
   | GitHubPublicPayload
-  | GitHubDependabotAlertPayload;
+  | GitHubDependabotAlertPayload
+  | GitHubLabelPayload;
 
 // GitHub webhook event type mapping
 export type GitHubWebhookEvent =
@@ -1866,7 +1891,8 @@ export type GitHubWebhookEvent =
   | "deployment_status"
   | "discussion"
   | "discussion_comment"
-  | "dependabot_alert";
+  | "dependabot_alert"
+  | "label";
 
 /**
  * Helper function to determine webhook event type from payload
@@ -1890,6 +1916,10 @@ export function getWebhookEventType(
     Array.isArray(payload.audit_log_events)
   ) {
     return "audit_log_streaming";
+  }
+
+  if ("label" in payload && "action" in payload && !("issue" in payload)) {
+    return "label";
   }
 
   if (

@@ -84,6 +84,27 @@ export const logWebhookEvent = async (
                 ? payload.hook.events
                 : [],
           }),
+        // Label Streaming specific
+        ...(eventType === "label" &&
+          "label" in payload &&
+          payload.label && {
+            label_id: payload.label.id,
+            label_name: payload.label.name,
+            label_color: payload.label.color,
+            label_description: payload.label.description,
+            label_default: payload.label.default,
+            label_created_at: payload.label.created_at,
+            label_updated_at: payload.label.updated_at,
+            ...(payload.changes && {
+              changed_name: !!payload.changes.name,
+              changed_color: !!payload.changes.color,
+              changed_description: !!payload.changes.description,
+              previous_name: payload.changes.name?.from,
+              previous_color: payload.changes.color?.from,
+              previous_description: payload.changes.description?.from,
+            }),
+          }),
+
         // dependabot_alert Streaming specific
         ...(eventType === "dependabot_alert" &&
           "alert" in payload &&

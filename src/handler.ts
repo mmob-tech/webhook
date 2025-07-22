@@ -18,6 +18,7 @@ import {
   GitHubGollumPayload,
   GitHubIssueCommentPayload,
   GitHubIssuesPayload,
+  GitHubLabelPayload,
   GitHubMemberPayload,
   GitHubOrganizationPayload,
   GitHubPackagePayload,
@@ -157,6 +158,30 @@ export const webhookHandler = async (
           message: `Repository ${repoPayload.action} event processed`,
           repository: repoPayload.repository.full_name,
           action: repoPayload.action,
+        }),
+      });
+    }
+    //handle label events
+    if (githubEvent === "label") {
+      const labelpayload = payload as GitHubLabelPayload;
+      console.log("🏷️ Label Event:", {
+        action: labelpayload.action,
+        label_name: labelpayload.label.name,
+        label_color: labelpayload.label.color,
+        label_description: labelpayload.label.description,
+        repository: labelpayload.repository.full_name,
+        ...(labelpayload.changes && {
+          changes: {
+            name: labelpayload.changes.name?.from
+              ? `"${labelpayload.changes.name.from}" → "${labelpayload.label.name}"`
+              : undefined,
+            color: labelpayload.changes.color?.from
+              ? `"${labelpayload.changes.color.from}" → "${labelpayload.label.color}"`
+              : undefined,
+            description: labelpayload.changes.description
+              ? `"${labelpayload.changes.description.from}" → "${labelpayload.label.description}"`
+              : undefined,
+          },
         }),
       });
     }

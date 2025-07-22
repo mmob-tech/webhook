@@ -1706,6 +1706,89 @@ export interface GitHubMilestonePayload {
   sender: GitHubUser;
 }
 
+// Dependabot Alert Events
+export interface GitHubDependabotAlertPayload {
+  action: "created" | "dismissed" | "fixed" | "reintroduced" | "reopened";
+  alert: {
+    number: number;
+    state: "dismissed" | "fixed" | "open";
+    dependency: {
+      package: {
+        ecosystem: string;
+        name: string;
+      };
+      manifest_path: string;
+      scope: "development" | "runtime" | null;
+    };
+    security_advisory: {
+      ghsa_id: string;
+      cve_id?: string | null;
+      summary: string;
+      description: string;
+      vulnerabilities: Array<{
+        package: {
+          ecosystem: string;
+          name: string;
+        };
+        severity: "low" | "medium" | "high" | "critical";
+        vulnerable_version_range: string;
+        first_patched_version?: {
+          identifier: string;
+        } | null;
+      }>;
+      severity: "low" | "medium" | "high" | "critical";
+      cvss: {
+        vector_string?: string | null;
+        score: number;
+      };
+      cwes: Array<{
+        cwe_id: string;
+        name: string;
+      }>;
+      identifiers: Array<{
+        value: string;
+        type: string;
+      }>;
+      references: Array<{
+        url: string;
+      }>;
+      published_at: string;
+      updated_at: string;
+      withdrawn_at?: string | null;
+    };
+    security_vulnerability: {
+      package: {
+        ecosystem: string;
+        name: string;
+      };
+      severity: "low" | "medium" | "high" | "critical";
+      vulnerable_version_range: string;
+      first_patched_version?: {
+        identifier: string;
+      } | null;
+    };
+    url: string;
+    html_url: string;
+    created_at: string;
+    updated_at: string;
+    dismissed_at?: string | null;
+    dismissed_by?: GitHubUser | null;
+    dismissed_reason?:
+      | "fix_started"
+      | "inaccurate"
+      | "no_bandwidth"
+      | "not_used"
+      | "tolerable_risk"
+      | null;
+    dismissed_comment?: string | null;
+    fixed_at?: string | null;
+    auto_dismissed_at?: string | null;
+  };
+  repository: GitHubRepository;
+  organization?: GitHubOrganization;
+  sender: GitHubUser;
+}
+
 // Public Events
 export interface GitHubPublicPayload {
   repository: GitHubRepository;
@@ -1746,7 +1829,8 @@ export type WebhookPayload =
   | GitHubPackagePayload
   | GitHubStatusPayload
   | GitHubMilestonePayload
-  | GitHubPublicPayload;
+  | GitHubPublicPayload
+  | GitHubDependabotAlertPayload;
 
 // GitHub webhook event type mapping
 export type GitHubWebhookEvent =
@@ -1781,7 +1865,8 @@ export type GitHubWebhookEvent =
   | "deployment"
   | "deployment_status"
   | "discussion"
-  | "discussion_comment";
+  | "discussion_comment"
+  | "dependabot_alert";
 
 /**
  * Helper function to determine webhook event type from payload
@@ -1796,6 +1881,10 @@ export function getWebhookEventType(
   }
 
   // Check for specific identifying properties in order of specificity
+  if ("alert" in payload && "security_advisory" in payload.alert) {
+    return "dependabot_alert";
+  }
+
   if (
     "audit_log_events" in payload &&
     Array.isArray(payload.audit_log_events)

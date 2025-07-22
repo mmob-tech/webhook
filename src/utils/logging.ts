@@ -84,7 +84,38 @@ export const logWebhookEvent = async (
                 ? payload.hook.events
                 : [],
           }),
-
+        // dependabot_alert Streaming specific
+        ...(eventType === "dependabot_alert" &&
+          "alert" in payload &&
+          payload.alert && {
+            alert_number: payload.alert.number,
+            alert_state: payload.alert.state,
+            package_ecosystem: payload.alert.dependency.package.ecosystem,
+            package_name: payload.alert.dependency.package.name,
+            manifest_path: payload.alert.dependency.manifest_path,
+            dependency_scope: payload.alert.dependency.scope,
+            vulnerability_severity:
+              payload.alert.security_vulnerability.severity,
+            advisory_ghsa_id: payload.alert.security_advisory.ghsa_id,
+            advisory_cve_id: payload.alert.security_advisory.cve_id,
+            advisory_summary: payload.alert.security_advisory.summary,
+            cvss_score: payload.alert.security_advisory.cvss.score,
+            vulnerable_version_range:
+              payload.alert.security_vulnerability.vulnerable_version_range,
+            first_patched_version:
+              payload.alert.security_vulnerability.first_patched_version
+                ?.identifier || null,
+            dismissed_by: payload.alert.dismissed_by?.login || null,
+            dismissed_reason: payload.alert.dismissed_reason,
+            dismissed_comment_length:
+              payload.alert.dismissed_comment?.length || 0,
+            cwes_count: payload.alert.security_advisory.cwes?.length || 0,
+            references_count:
+              payload.alert.security_advisory.references?.length || 0,
+            created_at: payload.alert.created_at,
+            fixed_at: payload.alert.fixed_at,
+            auto_dismissed_at: payload.alert.auto_dismissed_at,
+          }),
         // Audit Log Streaming specific
         ...(eventType === "audit_log_streaming" &&
           "audit_log_events" in payload &&

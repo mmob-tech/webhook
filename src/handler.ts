@@ -9,6 +9,7 @@ import {
   GitHubCommitCommentPayload,
   GitHubCreatePayload,
   GitHubDeletePayload,
+  GitHubDependabotAlertPayload,
   GitHubDeploymentPayload,
   GitHubDeploymentStatusPayload,
   GitHubDiscussionCommentPayload,
@@ -141,7 +142,6 @@ export const webhookHandler = async (
         }),
       });
     }
-
     // Handle repository events
     if (githubEvent === "repository") {
       const repoPayload = payload as GitHubRepositoryPayload;
@@ -161,6 +161,19 @@ export const webhookHandler = async (
       });
     }
 
+    // handle dependabot alert events
+    if (githubEvent === "dependabot_alert") {
+      const dependabotPayload = payload as GitHubDependabotAlertPayload;
+      console.log("🔒 Dependabot Alert Event:", {
+        action: dependabotPayload.action,
+        alert_number: dependabotPayload.alert.number,
+        state: dependabotPayload.alert.state,
+        package: `${dependabotPayload.alert.dependency.package.ecosystem}:${dependabotPayload.alert.dependency.package.name}`,
+        severity: dependabotPayload.alert.security_vulnerability.severity,
+        ghsa_id: dependabotPayload.alert.security_advisory.ghsa_id,
+        repository: dependabotPayload.repository.full_name,
+      });
+    }
     // Handle push events
     if (githubEvent === "push") {
       const pushPayload = payload as GitHubPushPayload;

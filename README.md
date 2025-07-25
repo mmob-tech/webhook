@@ -13,6 +13,7 @@ webhook
 │   │   └── github.ts       # TypeScript interfaces for GitHub webhook events
 │   └── utils
 │       ├── health.ts       # Health check fun tion for the webhook
+        ├── logging.ts          # Advanced logging utilities with structured event data
 │       ├── validator.ts    # Utility functions for validating webhook data
 │       └── signature.ts    # Webhook signature verification utilities
 ├── package.json            # npm configuration file
@@ -36,6 +37,7 @@ This handler supports all major GitHub webhook events, organized by category:
 - **`fork`** - Repository forked
 - **`star`** - Repository starred/unstarred
 - **`watch`** - Repository watched/unwatched
+- **`public`** - Repository made public
 
 ### **Pull Request Events**
 
@@ -52,6 +54,7 @@ This handler supports all major GitHub webhook events, organized by category:
 
 - **`commit_comment`** - Comments on commits
 - **`status`** - Commit status updates from CI/CD systems
+- **`gollum`** - Wiki page updates
 
 ### **Workflow & Actions**
 
@@ -81,13 +84,30 @@ This handler supports all major GitHub webhook events, organized by category:
 - **`discussion`** - Repository discussion created, edited, etc.
 - **`discussion_comment`** - Comments on discussions
 
-### **Wiki & Documentation**
+### **Project Management (4)**
 
-- **`gollum`** - Wiki page created, edited, deleted
+- **`milestone`** - Milestone creation, editing, deletion
+- **`label`** - Repository label management
+- **`project`** - Classic project board events
+- **`project_card`** - Project card movements
+- **`project_column`** - Project column management
 
-### **Security & Audit**
+### **Security Events (4)**
 
-- **`audit_log_streaming`** - Organization audit log events (requires special validation)
+- **`dependabot_alert`** - Dependabot vulnerability alerts
+- **`security_advisory`** - Security advisory publications
+- **`code_scanning_alert`** - Code scanning security alerts
+- **`secret_scanning_alert`** - Secret scanning alerts
+
+### **Advanced Events (6)**
+
+- **`audit_log_streaming`** - Organization audit logs
+- **`branch_protection_rule`** - Branch protection rule changes
+- **`repository_dispatch`** - Custom repository dispatch events
+- **`repository_vulnerability_alert`** - Repository vulnerability alerts
+- **`marketplace_purchase`** - GitHub Marketplace purchases
+- **`installation`** - GitHub App installations
+- **`installation_repositories`** - GitHub App repository access changes
 
 ## Setup Instructions
 

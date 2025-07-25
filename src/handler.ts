@@ -40,6 +40,55 @@ import {
 import { generateHealthCheckData } from "./utils/health";
 import { verifyGitHubSignature } from "./utils/signature";
 import { validateWebhookPayload } from "./utils/validator";
+
+export const handler = async (
+  event: APIGatewayEvent,
+  context: Context,
+  callback: Callback
+) => {
+  try {
+    const path = event.path;
+    const httpMethod = event.httpMethod;
+
+    // Health check endpoint - minimal logging
+    if (
+      (path === "/health" || path.endsWith("/health")) &&
+      httpMethod === "GET"
+    ) {
+      return await healthCheck(event, context, callback);
+    }
+
+    // Webhook endpoint - full processing
+    if (
+      (path === "/webhook" || path.endsWith("/webhook")) &&
+      httpMethod === "POST"
+    ) {
+      return await webhookHandler(event, context, callback);
+    }
+
+    // Unknown endpoint
+    return callback(null, {
+      statusCode: 404,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: "Not Found",
+        availableEndpoints: ["/health", "/webhook"],
+      }),
+    });
+  } catch (error) {
+    console.error("Handler error:", error);
+    return callback(null, {
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: "Internal server error" }),
+    });
+  }
+};
+
 export const healthCheck = async (
   event: APIGatewayEvent,
   context: Context,

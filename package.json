@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "deploy": "serverless deploy",
+    "deploy:prod": "AWS_PROFILE=webhook-deploy serverless deploy --stage prod",
     "dev": "serverless offline",
     "test": "jest",
     "test:watch": "jest --watch",

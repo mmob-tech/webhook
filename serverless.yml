@@ -16,21 +16,16 @@ provider:
         - "arn:aws:logs:eu-west-2:*:*"
 
 functions:
-  healthCheck:
-    handler: src/handler.healthCheck
+  api:
+    handler: src/handler.handler
     events:
       - http:
-          path: health
-          method: get
-          cors: false
-    timeout: 10
-    memorySize: 128
-  webhookHandler:
-    handler: src/handler.webhookHandler
-    events:
+          path: /{proxy+}
+          method: ANY
+          cors: true
       - http:
-          path: webhook
-          method: post
+          path: /
+          method: ANY
           cors: true
     timeout: 90
     memorySize: 256

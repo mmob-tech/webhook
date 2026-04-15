@@ -152,6 +152,14 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 export GITHUB_WEBHOOK_SECRET="your-super-secret-webhook-key-here"
 ```
 
+This project reads the webhook secret from `serverless.yml` via:
+
+```yaml
+GITHUB_WEBHOOK_SECRET: ${env:GITHUB_WEBHOOK_SECRET}
+```
+
+That means you can rotate the secret manually by changing the environment value and redeploying.
+
 ### **5. Deploy the Lambda Function**
 
 ```bash
@@ -173,18 +181,58 @@ npm run test:coverage
 npm test -- --testNamePattern="Pull Request"
 ```
 
+## Rotate Webhook Secret (Manual Steps)
+
+Use these steps any time you need to rotate a compromised or expired webhook secret.
+
+1. Generate a new secret.
+
+```bash
+openssl rand -base64 32
+```
+
+2. Update the webhook secret in GitHub.
+
+- Repository(Simi): Settings -> Webhooks -> select webhook -> Edit -> Change secret
+- Replace the **Secret** value and save.
+
+3. Update your deployment environment variable with the same new value.
+
+```bash
+export GITHUB_WEBHOOK_SECRET="paste-new-secret-here"
+```
+
+- AWS(mmob-dev): Lambda -> Functions -> select webhook -> Environment variables -> GITHUB_WEBHOOK_SECRET
+- Replace the **Secret** value and save.
+
+4. Redeploy Lambda.
+
+```bash
+npm run deploy
+```
+
+For production profile/stage:
+
+```bash
+export GITHUB_WEBHOOK_SECRET="paste-new-secret-here"
+npm run deploy:prod
+```
+
+5. Verify delivery.
+
+- In GitHub Webhook "Recent Deliveries", confirm new deliveries return `200`.
+- If deliveries fail signature checks, confirm GitHub secret and `GITHUB_WEBHOOK_SECRET` match exactly.
+
 ## GitHub Webhook Configuration
 
 ### **Repository Webhooks**
 
 1. **Navigate to Repository Settings**
-
    - Go to your repository on GitHub
    - Click on "Settings" tab
    - Select "Webhooks" from the left sidebar
 
 2. **Add New Webhook**
-
    - Click "Add webhook"
    - **Payload URL**: Your Lambda endpoint (from `serverless deploy` output)
    - **Content type**: `application/json`
@@ -203,7 +251,6 @@ npm test -- --testNamePattern="Pull Request"
 ### **Organization Webhooks**
 
 1. **Navigate to Organization Settings**
-
    - Go to your organization on GitHub
    - Click on "Settings" tab
    - Select "Webhooks" from the left sidebar
@@ -243,7 +290,7 @@ npm test -- --testNamePattern="Pull Request"
 const verifyGitHubSignature = (
   payload: string,
   signature: string,
-  secret: string
+  secret: string,
 ): boolean => {
   try {
     const expectedSignature = `sha256=${crypto
@@ -253,7 +300,7 @@ const verifyGitHubSignature = (
 
     return crypto.timingSafeEqual(
       Buffer.from(signature),
-      Buffer.from(expectedSignature)
+      Buffer.from(expectedSignature),
     );
   } catch (error) {
     return false;
@@ -488,19 +535,16 @@ SignatureValidationFailures:
 ### **Common Issues**
 
 1. **Signature Validation Failures**
-
    - Verify webhook secret matches in GitHub and Lambda
    - Check for trailing whitespace in secret
    - Ensure content-type is `application/json`
 
 2. **Missing Environment Variables**
-
    - Verify `GITHUB_WEBHOOK_SECRET` is set
    - Check serverless.yml environment configuration
    - Validate AWS parameter store/secrets manager setup
 
 3. **Deployment Issues**
-
    - Ensure AWS credentials are configured
    - Check IAM permissions for Lambda execution
    - Verify API Gateway configuration

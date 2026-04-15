@@ -18,6 +18,7 @@ import {
   GitHubGollumPayload,
   GitHubIssueCommentPayload,
   GitHubIssuesPayload,
+  GitHubLabelPayload,
   GitHubMemberPayload,
   GitHubOrganizationPayload,
   GitHubPackagePayload,
@@ -39,6 +40,55 @@ import {
 import { generateHealthCheckData } from "./utils/health";
 import { verifyGitHubSignature } from "./utils/signature";
 import { validateWebhookPayload } from "./utils/validator";
+
+export const handler = async (
+  event: APIGatewayEvent,
+  context: Context,
+  callback: Callback
+) => {
+  try {
+    const path = event.path;
+    const httpMethod = event.httpMethod;
+
+    // Health check endpoint - minimal logging
+    if (
+      (path === "/health" || path.endsWith("/health")) &&
+      httpMethod === "GET"
+    ) {
+      return await healthCheck(event, context, callback);
+    }
+
+    // Webhook endpoint - full processing
+    if (
+      (path === "/webhook" || path.endsWith("/webhook")) &&
+      httpMethod === "POST"
+    ) {
+      return await webhookHandler(event, context, callback);
+    }
+
+    // Unknown endpoint
+    return callback(null, {
+      statusCode: 404,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: "Not Found",
+        availableEndpoints: ["/health", "/webhook"],
+      }),
+    });
+  } catch (error) {
+    console.error("Handler error:", error);
+    return callback(null, {
+      statusCode: 500,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message: "Internal server error" }),
+    });
+  }
+};
+
 export const healthCheck = async (
   event: APIGatewayEvent,
   context: Context,
@@ -157,6 +207,30 @@ export const webhookHandler = async (
           message: `Repository ${repoPayload.action} event processed`,
           repository: repoPayload.repository.full_name,
           action: repoPayload.action,
+        }),
+      });
+    }
+    //handle label events
+    if (githubEvent === "label") {
+      const labelpayload = payload as GitHubLabelPayload;
+      console.log("🏷️ Label Event:", {
+        action: labelpayload.action,
+        label_name: labelpayload.label.name,
+        label_color: labelpayload.label.color,
+        label_description: labelpayload.label.description,
+        repository: labelpayload.repository.full_name,
+        ...(labelpayload.changes && {
+          changes: {
+            name: labelpayload.changes.name?.from
+              ? `"${labelpayload.changes.name.from}" → "${labelpayload.label.name}"`
+              : undefined,
+            color: labelpayload.changes.color?.from
+              ? `"${labelpayload.changes.color.from}" → "${labelpayload.label.color}"`
+              : undefined,
+            description: labelpayload.changes.description
+              ? `"${labelpayload.changes.description.from}" → "${labelpayload.label.description}"`
+              : undefined,
+          },
         }),
       });
     }

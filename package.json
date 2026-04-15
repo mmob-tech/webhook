@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc",
     "deploy": "serverless deploy",
+    "deploy:prod": "AWS_PROFILE=webhook-deploy serverless deploy --stage prod",
     "dev": "serverless offline",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -13,7 +14,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.1000.0",
-    "axios": "^0.30.0"
+    "axios": "^1.13.5"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.0",
